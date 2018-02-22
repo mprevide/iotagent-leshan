@@ -30,7 +30,7 @@ public class HelloWorld {
         Integer[] group = new Integer[1];
         group[0] = 1;
 
-
+        // TODO(jsiloto) Substitute mocked values with reasonable ones
         try {
             Algorithm algorithm = Algorithm.HMAC256("secret");
             token = JWT.create()

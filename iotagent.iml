@@ -24,5 +24,15 @@
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore-nio:4.4.4" level="project" />
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpmime:4.5.2" level="project" />
     <orderEntry type="library" name="Maven: org.json:json:20160212" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.leshan:leshan-server-cf:1.0.0-M5" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.leshan:leshan-core-cf:1.0.0-M5" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.leshan:leshan-core:1.0.0-M5" level="project" />
+    <orderEntry type="library" name="Maven: com.eclipsesource.minimal-json:minimal-json:0.9.5" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.leshan:leshan-server-core:1.0.0-M5" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.californium:californium-core:2.0.0-M6" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.californium:element-connector:2.0.0-M6" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.californium:scandium:2.0.0-M6" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.slf4j:slf4j-simple:1.7.10" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.10" level="project" />
   </component>
 </module>
