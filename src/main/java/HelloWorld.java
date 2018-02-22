@@ -1,5 +1,8 @@
 
+import com.auth0.jwt.*;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import org.apache.commons.codec.binary.Base64;
+import com.auth0.jwt.algorithms.Algorithm;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 //import java.io.DataOutputStream;
@@ -23,6 +26,8 @@ public class HelloWorld {
 
             Map<String, String> parameters = new HashMap<>();
             parameters.put("param1", "val");
+
+            DecodedJWT jwt = JWT.require(Algorithm.HMAC256("secret"));
 
 
             con.setRequestProperty("Content-Type", "application/json");
