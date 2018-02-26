@@ -16,8 +16,35 @@ import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Collection;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
+import org.eclipse.leshan.core.node.LwM2mPath;
+import org.eclipse.leshan.core.request.ContentFormat;
+import org.eclipse.leshan.core.request.WriteRequest;
+import org.eclipse.leshan.core.response.WriteResponse;
+import org.eclipse.leshan.server.californium.LeshanServerBuilder;
+import org.eclipse.leshan.server.californium.impl.LeshanServer;
+import org.eclipse.leshan.server.registration.RegistrationListener;
+import org.eclipse.leshan.server.registration.Registration;
+import org.eclipse.leshan.server.registration.RegistrationUpdate;
+import org.eclipse.leshan.core.observation.Observation;
+import org.eclipse.leshan.core.response.ReadResponse;
+import org.eclipse.leshan.core.request.ReadRequest;
+import org.eclipse.leshan.core.node.LwM2mResource;
+import org.eclipse.leshan.core.node.LwM2mNode;
+
+
+import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeSerializer;
+import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeDeserializer;
+
+
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+
 
 public class HelloWorld {
 
@@ -56,17 +83,90 @@ public class HelloWorld {
 
     public static void main(String[] args) {
         try {
-            System.out.println("Hello, World!");
 
-            String token = GetJwtToken("admin");
 
-            HttpResponse<InputStream> jsonResponse = Unirest.get(url+"b60aa5e9-cbe6-4b51-b76c-08cf8273db07/binary")
-                    .header("Authorization", "Bearer " + token)
-                    .asBinary();
+            LeshanServerBuilder builder = new LeshanServerBuilder();
+            // add this line if you are using leshan 1.0.0-M4 because of
+            // https://github.com/eclipse/leshan/issues/392
+            // builder.setSecurityStore(new InMemorySecurityStore());
+            LeshanServer server = builder.build();
+            server.start();
 
-            System.out.println(jsonResponse.getStatus());
-            System.out.println(jsonResponse.getStatusText());
-            System.out.println(jsonResponse.getBody());
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.registerTypeHierarchyAdapter(LwM2mNode.class, new LwM2mNodeSerializer());
+            gsonBuilder.registerTypeHierarchyAdapter(LwM2mNode.class, new LwM2mNodeDeserializer());
+            gsonBuilder.setDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+            Gson gson = gsonBuilder.create();
+
+
+
+            server.getRegistrationService().addListener(new RegistrationListener() {
+
+                public void registered(Registration registration, Registration previousReg,
+                                       Collection<Observation> previousObsersations) {
+
+
+                    System.out.println("new device: " + registration.getEndpoint());
+
+                    for(int i=0; i<registration.getObjectLinks().length; i++){
+                        System.out.println(registration.getObjectLinks()[i]);
+                    }
+
+//                    System.out.println("links: " + );
+                    try {
+                        ReadResponse r_response = server.send(registration, new ReadRequest(3));
+                        LwM2mNode object = r_response.getContent();
+                        String json = gson.toJson(object);
+                        System.out.println("Device:" + json);
+                        object = gson.fromJson(json, LwM2mNode.class);
+                        WriteResponse w_response = server.send(registration,
+                                new WriteRequest(WriteRequest.Mode.REPLACE, ContentFormat.TLV, "/", object));
+
+
+                        System.out.println("Device:" + object);
+
+
+//                      WriteResponse response = server.send(registration, new WriteRequest(5,0,1, "coap://[2001:db8::2]:5693/data/test.hex") );
+                        ReadResponse response = server.send(registration, new ReadRequest(3,0,13));
+                        if (response.isSuccess()) {
+                            System.out.println("Device time:" + ((LwM2mResource)response.getContent()).getValue());
+                        }else {
+                            System.out.println("Failed to read:" + response.getCode() + " " + response.getErrorMessage());
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                public void updated(RegistrationUpdate update, Registration updatedReg, Registration previousReg) {
+                    System.out.println("device is still here: " + updatedReg.getEndpoint());
+                }
+
+                public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
+                                         Registration newReg) {
+                    System.out.println("device left: " + registration.getEndpoint());
+                }
+            });
+
+
+
+
+
+
+
+
+
+//            System.out.println("Hello, World!");
+//
+//            String token = GetJwtToken("admin");
+//
+//            HttpResponse<InputStream> jsonResponse = Unirest.get(url+"b60aa5e9-cbe6-4b51-b76c-08cf8273db07/binary")
+//                    .header("Authorization", "Bearer " + token)
+//                    .asBinary();
+//
+//            System.out.println(jsonResponse.getStatus());
+//            System.out.println(jsonResponse.getStatusText());
+//            System.out.println(jsonResponse.getBody());
 
         } catch (Exception e) {
             // printStackTrace method
