@@ -1,6 +1,7 @@
 
 import com.auth0.jwt.*;
 import com.fasterxml.jackson.databind.node.BinaryNode;
+import com.google.gson.*;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.*;
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -38,12 +39,6 @@ import org.eclipse.leshan.core.node.LwM2mNode;
 
 import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeSerializer;
 import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeDeserializer;
-
-
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
 
 
 public class HelloWorld {
@@ -116,11 +111,15 @@ public class HelloWorld {
                     try {
                         ReadResponse r_response = server.send(registration, new ReadRequest(3));
                         LwM2mNode object = r_response.getContent();
-                        String json = gson.toJson(object);
-                        System.out.println("Device:" + json);
+                        System.out.println("Device:" + object);
+                        JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
+                        JsonElement json = jo.getAsJsonArray("instances").get(0);
+
+                        System.out.println("Instances:" + json);
                         object = gson.fromJson(json, LwM2mNode.class);
-                        WriteResponse w_response = server.send(registration,
-                                new WriteRequest(WriteRequest.Mode.REPLACE, ContentFormat.TLV, "/", object));
+                        System.out.println("Instances:" + object);
+
+                        WriteResponse w_response = server.send(registration, new WriteRequest(WriteRequest.Mode.REPLACE, ContentFormat.TLV, "/3/0/", object));
 
 
                         System.out.println("Device:" + object);
