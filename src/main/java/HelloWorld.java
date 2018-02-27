@@ -14,14 +14,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 //import java.io.DataOutputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.Map;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Collection;
+import java.util.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 import org.eclipse.leshan.core.node.LwM2mPath;
+import org.eclipse.leshan.core.node.LwM2mSingleResource;
 import org.eclipse.leshan.core.request.ContentFormat;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.core.response.WriteResponse;
@@ -35,6 +33,7 @@ import org.eclipse.leshan.core.response.ReadResponse;
 import org.eclipse.leshan.core.request.ReadRequest;
 import org.eclipse.leshan.core.node.LwM2mResource;
 import org.eclipse.leshan.core.node.LwM2mNode;
+import org.eclipse.leshan.core.model.ResourceModel.Type;
 
 
 import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeSerializer;
@@ -109,19 +108,31 @@ public class HelloWorld {
 
 //                    System.out.println("links: " + );
                     try {
-                        ReadResponse r_response = server.send(registration, new ReadRequest(3));
+                        ReadResponse r_response = server.send(registration, new ReadRequest(3, 0));
                         LwM2mNode object = r_response.getContent();
                         System.out.println("Device:" + object);
                         JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
-                        JsonElement json = jo.getAsJsonArray("instances").get(0);
+                        JsonArray resources = jo.getAsJsonArray("resources");
+                        JsonArray modified_resources = new JsonArray();
+                        JsonObject name = resources.get(8).getAsJsonObject(); // get object with id 14 not at [14]
+                        name.addProperty("value", "-1");
+                        modified_resources.add(name);
+                        jo.add("resources", modified_resources);
+                        System.out.println("Modified Resources:" + modified_resources);
+                        object = gson.fromJson(jo, LwM2mNode.class);
 
-                        System.out.println("Instances:" + json);
-                        object = gson.fromJson(json, LwM2mNode.class);
+//                        ArrayList<LwM2mNode> re = new ArrayList<LwM2mNode>();
+//                        re.add(new LwM2mSingleResource(object));
+
+                        LwM2mSingleResource node = LwM2mSingleResource.newResource(14, Long.valueOf(-1), Type.INTEGER);
+
+
                         System.out.println("Instances:" + object);
+                        WriteResponse w_response = server.send(registration, new WriteRequest(WriteRequest.Mode.REPLACE, ContentFormat.TLV, "/3/0", object));
 
-                        WriteResponse w_response = server.send(registration, new WriteRequest(WriteRequest.Mode.REPLACE, ContentFormat.TLV, "/3/0/", object));
 
-
+                        r_response = server.send(registration, new ReadRequest(3, 0));
+                        object = r_response.getContent();
                         System.out.println("Device:" + object);
 
 
