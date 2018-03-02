@@ -44,6 +44,16 @@ public class HelloWorld {
 
     private static String url = "http://localhost:8000/image/";
 
+    private static final Map<String, String> Device2Lwm2m = createMap();
+    private static Map<String, String> createMap()
+    {
+        Map<String,String> myMap = new HashMap<String,String>();
+        myMap.put("a", "b");
+        myMap.put("c", "d");
+        return myMap;
+    }
+
+
     private static HttpURLConnection con;
 
     private static String GetJwtToken(String service){
@@ -187,4 +197,8 @@ public class HelloWorld {
             System.out.println(e);
         }
     }
+
+
+
+
 }
