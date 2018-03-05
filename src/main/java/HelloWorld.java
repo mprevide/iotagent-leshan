@@ -44,13 +44,14 @@ public class HelloWorld {
 
     private static String url = "http://localhost:8000/image/";
 
-    private static final Map<String, String> Device2Lwm2m = createMap();
+    private static final Map<String, String> lampLwm2m = createMap();
     private static Map<String, String> createMap()
     {
-        Map<String,String> myMap = new HashMap<String,String>();
-        myMap.put("a", "b");
-        myMap.put("c", "d");
-        return myMap;
+        Map<String,String> lampMapping = new HashMap<String,String>();
+        myMap.put("name", "/5000/0/0");
+        myMap.put("voltage", "/5000/0/1");
+        myMap.put("luminosity", "/5000/0/2");
+        return lampMapping;
     }
 
 
