@@ -52,6 +52,10 @@ import org.json.JSONObject;
 public class LwM2mAgent {
 
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
+    private final static String[] modelPaths = new String[]{"5000.xml"};
+    private LeshanServer server;
+    LwM2mModelProvider modelProvider;
+
 
     // *********** Static Methods *************** //
     private static void getDeviceFromDeviceManager(String id) {
@@ -141,14 +145,12 @@ public class LwM2mAgent {
                 String key = (String) keys.next();
                 Integer[] path = lampLwm2m.get(key);
                 Object val = data.get(key);
-                if(val instanceof String){
-                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (String)val));
-                }
-                else if(val instanceof Double){
-                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (Double)val));
-                }
-                else if(val instanceof Boolean){
-                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (Boolean)val));
+                if (val instanceof String) {
+                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (String) val));
+                } else if (val instanceof Double) {
+                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (Double) val));
+                } else if (val instanceof Boolean) {
+                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (Boolean) val));
                 }
 
             } catch (Exception e) {
@@ -162,14 +164,28 @@ public class LwM2mAgent {
 
     }
 
-    private final static String[] modelPaths = new String[]{"5000.xml"};
-    private LeshanServer server;
-    LwM2mModelProvider modelProvider;
+
+    RegistrationListener listener = new RegistrationListener() {
+        public void registered(Registration registration, Registration previousReg,
+                               Collection<Observation> previousObsersations) {
+            registerNewDevice(registration, previousReg, previousObsersations);
+        }
+
+        public void updated(RegistrationUpdate update, Registration updatedReg, Registration previousReg) {
+        }
+
+        public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
+                                 Registration newReg) {
+            System.out.println("device left: " + registration.getEndpoint());
+        }
+    };
 
 
     public void run() {
         try {
             LeshanServerBuilder builder = new LeshanServerBuilder();
+
+            // Set encoder/decoders
             builder.setEncoder(new DefaultLwM2mNodeEncoder());
             LwM2mNodeDecoder decoder = new DefaultLwM2mNodeDecoder();
             builder.setDecoder(decoder);
@@ -181,32 +197,12 @@ public class LwM2mAgent {
             builder.setObjectModelProvider(modelProvider);
 
 
-
-
-
-            // add this line if you are using leshan 1.0.0-M4 because of
-            // https://github.com/eclipse/leshan/issues/392
-            // builder.setSecurityStore(new InMemorySecurityStore());
+            // Start Server
             server = builder.build();
             server.start();
 
-
-            server.getRegistrationService().addListener(new RegistrationListener() {
-
-                public void registered(Registration registration, Registration previousReg,
-                                       Collection<Observation> previousObsersations) {
-                    registerNewDevice(registration, previousReg, previousObsersations);
-                }
-
-                public void updated(RegistrationUpdate update, Registration updatedReg, Registration previousReg) {
-                    //System.out.println("device is still here: " + updatedReg.getEndpoint());
-                }
-
-                public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
-                                         Registration newReg) {
-                    System.out.println("device left: " + registration.getEndpoint());
-                }
-            });
+            // Add Registration Treatment
+            server.getRegistrationService().addListener(listener);
 
 
 //            ReadResponse r_response = server.send(registration, new ReadRequest(5000, 0));
