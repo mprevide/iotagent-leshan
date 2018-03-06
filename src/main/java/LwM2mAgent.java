@@ -1,3 +1,5 @@
+package org.cpqd.iotagent;
+
 
 import com.auth0.jwt.*;
 import com.fasterxml.jackson.databind.node.BinaryNode;
@@ -9,22 +11,28 @@ import org.apache.commons.codec.binary.Base64;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.algorithms.Algorithm.*;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+
+import java.io.*;
 //import java.io.DataOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import org.eclipse.leshan.core.model.LwM2mModel;
+import org.eclipse.leshan.core.model.ObjectLoader;
+import org.eclipse.leshan.core.model.ObjectModel;
 import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.node.LwM2mSingleResource;
+import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
+import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
+import org.eclipse.leshan.core.node.codec.LwM2mNodeDecoder;
 import org.eclipse.leshan.core.request.ContentFormat;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.core.response.WriteResponse;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
 import org.eclipse.leshan.server.californium.impl.LeshanServer;
+import org.eclipse.leshan.server.model.LwM2mModelProvider;
+import org.eclipse.leshan.server.model.StaticModelProvider;
 import org.eclipse.leshan.server.registration.RegistrationListener;
 import org.eclipse.leshan.server.registration.Registration;
 import org.eclipse.leshan.server.registration.RegistrationUpdate;
@@ -43,18 +51,17 @@ import org.json.JSONObject;
 
 public class LwM2mAgent {
 
-    private Map<String, Registration> Devices;
-
+    private Map<String, Registration> Devices = new HashMap<String, Registration>();
 
     // *********** Static Methods *************** //
-    private static void getDeviceFromDeviceManager(String id){
+    private static void getDeviceFromDeviceManager(String id) {
     }
-
 
 
     // *********** Instance Initialization *************** //
     private static Gson gson = createGson();
-    private static Gson createGson(){
+
+    private static Gson createGson() {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeHierarchyAdapter(LwM2mNode.class, new LwM2mNodeSerializer());
         gsonBuilder.registerTypeHierarchyAdapter(LwM2mNode.class, new LwM2mNodeDeserializer());
@@ -63,35 +70,42 @@ public class LwM2mAgent {
         return thiGson;
     }
 
-    private static final Map<String, String> lampLwm2m = createMap();
-    private static Map<String, String> createMap()
-    {
-        Map<String,String> lampMapping = new HashMap<String,String>();
-        lampMapping.put("name", "/5000/0/0");
-        lampMapping.put("voltage", "/5000/0/1");
-        lampMapping.put("luminosity", "/5000/0/2");
+    private static final Map<String, Integer[]> lampLwm2m = createMap();
+
+    private static Map<String, Integer[]> createMap() {
+        Map<String, Integer[]> lampMapping = new HashMap<String, Integer[]>();
+        lampMapping.put("name", new Integer[]{5000, 0, 0});
+        lampMapping.put("voltage", new Integer[]{5000, 0, 1});
+        lampMapping.put("luminosity", new Integer[]{5000, 0, 2});
         return lampMapping;
     }
 
     // ********* Methods ****************** //
 
     private void registerNewDevice(Registration registration, Registration previousReg,
-                                   Collection<Observation> previousObsersations){
+                                   Collection<Observation> previousObsersations) {
+
+        System.out.println(registration.getId());
+        //Devices.put(registration.getId(), registration);
+        Devices.put("f9b1", registration);
         // Request Device from device-manager
         getDeviceFromDeviceManager("asv");
         // Register listeners for dynamic data
 
+
         System.out.println("new device: " + registration.getEndpoint());
-        for(int i=0; i<registration.getObjectLinks().length; i++){
+        for (int i = 0; i < registration.getObjectLinks().length; i++) {
             System.out.println(registration.getObjectLinks()[i]);
         }
 
         try {
-            ReadResponse response = server.send(registration, new ReadRequest(5000,0));
+            ReadResponse response = server.send(registration, new ReadRequest(5000));
             LwM2mNode object = response.getContent();
+            JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
             if (response.isSuccess()) {
-                System.out.println("Device: " + object);
-            }else {
+                System.out.println("Device: " + response.getContent());
+                System.out.println("Device: " + jo);
+            } else {
                 System.out.println("Failed to read:" + response.getCode() + " " + response.getErrorMessage());
             }
         } catch (InterruptedException e) {
@@ -100,39 +114,80 @@ public class LwM2mAgent {
     }
 
 
-
     // *********** Run Server *************** //
-    public void updateDevice(){
+    public void updateDevice() {
 
     }
 
-    public void actuate(String message){
+    public String actuate(String message) {
 
-        message = "{'data': {u'attrs': {u'luminosity': 10.6}, 'id': u'f9b1'},\n" +
+        message = "{'data': {'attrs': {'luminosity': 10.6}, 'id': 'f9b1'},\n" +
                 " 'event': 'configure',\n" +
-                " 'meta': {'service': u'admin'}}";
+                " 'meta': {'service': 'admin'}}";
 
         JsonNode act = new JsonNode(message);
         JSONObject data = act.getObject().getJSONObject("data");
         String id = data.getString("id");
+        Registration registration = Devices.get(id);
+
+        LwM2mModel model = modelProvider.getObjectModel(registration);
+        Collection<ObjectModel> models = model.getObjectModels();
 
 
-        JsonNode data = act;
+        data = data.getJSONObject("attrs");
+        Iterator<?> keys = data.keys();
+        while (keys.hasNext()) {
+            try {
+                String key = (String) keys.next();
+                Integer[] path = lampLwm2m.get(key);
+                Object val = data.get(key);
+                if(val instanceof String){
+                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (String)val));
+                }
+                else if(val instanceof Double){
+                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (Double)val));
+                }
+                else if(val instanceof Boolean){
+                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (Boolean)val));
+                }
 
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println(e);
+            }
 
+        }
 
+        return "OK";
 
     }
 
+    private final static String[] modelPaths = new String[]{"5000.xml"};
+    private LeshanServer server;
+    LwM2mModelProvider modelProvider;
 
 
-    public void run(){
+    public void run() {
         try {
             LeshanServerBuilder builder = new LeshanServerBuilder();
+            builder.setEncoder(new DefaultLwM2mNodeEncoder());
+            LwM2mNodeDecoder decoder = new DefaultLwM2mNodeDecoder();
+            builder.setDecoder(decoder);
+
+            // Define model provider
+            List<ObjectModel> models = ObjectLoader.loadDefault();
+            models.addAll(ObjectLoader.loadDdfResources("/models/", modelPaths));
+            modelProvider = new StaticModelProvider(models);
+            builder.setObjectModelProvider(modelProvider);
+
+
+
+
+
             // add this line if you are using leshan 1.0.0-M4 because of
             // https://github.com/eclipse/leshan/issues/392
             // builder.setSecurityStore(new InMemorySecurityStore());
-            LeshanServer server = builder.build();
+            server = builder.build();
             server.start();
 
 
@@ -144,7 +199,7 @@ public class LwM2mAgent {
                 }
 
                 public void updated(RegistrationUpdate update, Registration updatedReg, Registration previousReg) {
-                    System.out.println("device is still here: " + updatedReg.getEndpoint());
+                    //System.out.println("device is still here: " + updatedReg.getEndpoint());
                 }
 
                 public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
@@ -185,9 +240,6 @@ public class LwM2mAgent {
 //                      WriteResponse response = server.send(registration, new WriteRequest(5,0,1, "coap://[2001:db8::2]:5693/data/test.hex") );
 
 
-
-
-
 //            System.out.println("Hello, World!");
 //
 //            String token = GetJwtToken("admin");
@@ -201,7 +253,6 @@ public class LwM2mAgent {
 //            System.out.println(jsonResponse.getBody());
 
 
-
         } catch (Exception e) {
             // printStackTrace method
             // prints line numbers + call stack
@@ -211,7 +262,6 @@ public class LwM2mAgent {
             System.out.println(e);
         }
     }
-
 
 
 }

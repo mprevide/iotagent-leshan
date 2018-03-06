@@ -1,4 +1,5 @@
 
+
 import com.auth0.jwt.*;
 import com.fasterxml.jackson.databind.node.BinaryNode;
 import com.google.gson.*;
@@ -17,6 +18,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
+import org.cpqd.iotagent.LwM2mAgent;
 
 import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.node.LwM2mSingleResource;
@@ -89,8 +92,14 @@ public class HelloWorld {
 
 
     public static void main(String[] args) {
-        get("/update", (req, res) -> myGet());
+        LwM2mAgent agent = new LwM2mAgent();
+
+        get("/update", (req, res) -> agent.actuate(req.body()));
         get("/actuate", (req, res) -> "Hello World");
+
+
+        agent.run();
+
     }
 
 
