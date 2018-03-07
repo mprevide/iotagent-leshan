@@ -160,7 +160,7 @@ public class LwM2mAgent {
 
         }
 
-        return "OK";
+        return "OK\n";
 
     }
 

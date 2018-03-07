@@ -94,8 +94,8 @@ public class HelloWorld {
     public static void main(String[] args) {
         LwM2mAgent agent = new LwM2mAgent();
 
-        get("/update", (req, res) -> agent.actuate(req.body()));
-        get("/actuate", (req, res) -> "Hello World");
+        get("/update", (req, res) -> "Hello World\n");
+        get("/actuate", (req, res) -> agent.actuate(req.body()));
 
 
         agent.run();
