@@ -1,32 +1,18 @@
 package org.cpqd.iotagent;
 
 
-import com.auth0.jwt.*;
-import com.fasterxml.jackson.databind.node.BinaryNode;
 import com.google.gson.*;
-import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.*;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import org.apache.commons.codec.binary.Base64;
-import com.auth0.jwt.exceptions.JWTCreationException;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.algorithms.Algorithm.*;
 
-import java.io.*;
 //import java.io.DataOutputStream;
 import java.util.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 import org.eclipse.leshan.core.model.LwM2mModel;
 import org.eclipse.leshan.core.model.ObjectLoader;
 import org.eclipse.leshan.core.model.ObjectModel;
-import org.eclipse.leshan.core.node.LwM2mPath;
-import org.eclipse.leshan.core.node.LwM2mSingleResource;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
 import org.eclipse.leshan.core.node.codec.LwM2mNodeDecoder;
-import org.eclipse.leshan.core.request.ContentFormat;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.core.response.WriteResponse;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
@@ -39,14 +25,16 @@ import org.eclipse.leshan.server.registration.RegistrationUpdate;
 import org.eclipse.leshan.core.observation.Observation;
 import org.eclipse.leshan.core.response.ReadResponse;
 import org.eclipse.leshan.core.request.ReadRequest;
-import org.eclipse.leshan.core.node.LwM2mResource;
 import org.eclipse.leshan.core.node.LwM2mNode;
-import org.eclipse.leshan.core.model.ResourceModel.Type;
 
 
 import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeSerializer;
 import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeDeserializer;
 import org.json.JSONObject;
+
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 
 public class LwM2mAgent {
@@ -129,6 +117,22 @@ public class LwM2mAgent {
                 " 'event': 'configure',\n" +
                 " 'meta': {'service': 'admin'}}";
 
+
+
+        try {
+            ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+            engine.eval("load(\"" + "src" + "/" + "main" + "/" + "script.js" + "\");");
+
+            Invocable invocable = (Invocable) engine;
+
+            Object result = invocable.invokeFunction("fun1", "Peter Parker");
+            System.out.println(result);
+            System.out.println(result.getClass());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        
         JsonNode act = new JsonNode(message);
         JSONObject data = act.getObject().getJSONObject("data");
         String id = data.getString("id");
