@@ -52,40 +52,23 @@ import javax.script.ScriptEngineManager;
 
 public class LwM2mAgent {
 
+    private String imageManagerUrl;
+    private String deviceManagerUrl;
+    private ImageDownloader imageDownloader;
 
-    private static String url = "http://localhost:8000/image/";
+
+    LwM2mAgent(String deviceManagerUrl, String imageManagerUrl){
+        this.deviceManagerUrl = deviceManagerUrl;
+        this.imageManagerUrl = imageManagerUrl;
+        imageDownloader = new ImageDownloader(imageManagerUrl);
+    }
+
+
+
+
 
 
     private static HttpURLConnection con;
-
-    private static String GetJwtToken(String service) {
-        String token = "";
-        Integer[] group = new Integer[1];
-        group[0] = 1;
-
-        // TODO(jsiloto) Substitute mocked values with reasonable ones
-        try {
-            Algorithm algorithm = Algorithm.HMAC256("secret");
-            token = JWT.create()
-                    .withClaim("userid", 1)
-                    .withClaim("name", "Admin (superuser)")
-                    .withArrayClaim("groups", group)
-                    .withIssuedAt(new Date(1517339633))
-                    .withExpiresAt(new Date(1517340053))
-                    .withClaim("email", "admin@noemail.com")
-                    .withClaim("profile", "admin")
-                    .withIssuer("eGfIBvOLxz5aQxA92lFk5OExZmBMZDDh")
-                    .withClaim("service", service)
-                    .withJWTId("7e3086317df2c299cef280932da856e5")
-                    .withClaim("username", "admin")
-                    .sign(algorithm);
-        } catch (UnsupportedEncodingException exception) {
-            //UTF-8 encoding not supported
-        } catch (JWTCreationException exception) {
-            //Invalid Signing configuration / Couldn't convert Claims.
-        }
-        return token;
-    }
 
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
     private final static String[] modelPaths = new String[]{"5000.xml"};
@@ -195,6 +178,8 @@ public class LwM2mAgent {
         String id = data.getString("id");
         Registration registration = Devices.get(id);
 
+
+
         data = data.getJSONObject("attrs");
         Iterator<?> templates = data.keys();
         while (templates.hasNext()) {
@@ -202,26 +187,21 @@ public class LwM2mAgent {
                 String template = (String) templates.next();
                 JSONArray attrs = data.getJSONArray(template);
                 for (int i = 0; i < attrs.length(); i++) {
+                    String newFwVersion = "";
+                    String deviceLabel = "";
+
+
                     JSONObject attr = (JSONObject) attrs.get(i);
-                    if (attr.getString("label").equals("fw_version") ) {
-//                        ReadResponse r_response = server.send(registration, new ReadRequest(5, 0, 1));
-//                        LwM2mNode object = r_response.getContent();
-//                        JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
-                        String new_version = attr.getString("static_value");
-                        String current_version = "1.0.0";
-                        if (current_version != new_version) {
-                            String token = GetJwtToken("admin");
-                            HttpResponse<InputStream> fwInStream = Unirest.get(url + "b60aa5e9-cbe6-4b51-b76c-08cf8273db07/binary")
-                                    .header("Authorization", "Bearer " + token)
-                                    .asBinary();
+                    if (attr.getString("label").equals("fw_version")){
+                        newFwVersion = attr.getString("static_value");
+                    }
+                    if (attr.getString("label").equals("Model Number")){
+                        deviceLabel = attr.getString("static_value");
+                    }
 
-                            InputStream in = fwInStream.getBody();
-                            Path path = FileSystems.getDefault().getPath("./fw");
-                            Files.copy(in, path);
-
-                        }
-
-
+                    String currentFwVersion = "1.0.0";
+                    if (!currentFwVersion.equals(newFwVersion)) {
+                        imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
                     }
                 }
 
