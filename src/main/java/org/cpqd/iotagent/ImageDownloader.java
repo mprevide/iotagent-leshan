@@ -4,19 +4,23 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.eclipsesource.json.Json;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import org.json.JSONArray;
+import org.json.JSONObject;
+import org.omg.CosNaming.NamingContextPackage.NotFound;
 
 import java.awt.*;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public class ImageDownloader {
 
@@ -29,6 +33,7 @@ public class ImageDownloader {
     public void FetchImage(String service, String deviceLabel, String version) {
         String token = GetJwtToken(service);
         String imageID = GetImageId(deviceLabel, version, token);
+        DownloadImage(imageID, token);
     }
 
     private String GetImageId(String deviceLabel, String version, String token) {
@@ -38,9 +43,14 @@ public class ImageDownloader {
                     .header("Authorization", "Bearer " + token).asJson();
 
             JsonNode imageList = response.getBody();
-            Iterator<?> images = imageList.getArray().iterator();
-            while (images.hasNext()){
-                System.out.println(images.next());
+            JSONArray images = imageList.getArray();
+            for(int i =0; i<images.length(); i++){
+                JSONObject image = images.getJSONObject(i);
+                String d = image.getString("label");
+                String f = image.getString("fw_version");
+                if(d.equals(deviceLabel) && f.equals(version)){
+                    return image.getString("id");
+                }
             }
 
 
@@ -48,7 +58,7 @@ public class ImageDownloader {
             e.printStackTrace();
             System.out.println(e);
         }
-        return "OK";
+        throw new NoSuchElementException("Image not on Database");
     }
 
     private void DownloadImage(String imageId, String token) {
@@ -58,8 +68,8 @@ public class ImageDownloader {
                     .asBinary();
 
             InputStream in = fwInStream.getBody();
-            Path path = FileSystems.getDefault().getPath("./fw");
-            Files.copy(in, path);
+            Path path = FileSystems.getDefault().getPath("./fw/"+imageId);
+            Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);

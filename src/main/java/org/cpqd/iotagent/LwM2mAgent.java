@@ -1,21 +1,11 @@
 package org.cpqd.iotagent;
 
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
 import com.google.gson.*;
 import com.mashape.unirest.http.*;
 
 //import java.io.DataOutputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 import org.eclipse.leshan.core.model.LwM2mModel;
@@ -39,15 +29,8 @@ import org.eclipse.leshan.core.request.ReadRequest;
 import org.eclipse.leshan.core.node.LwM2mNode;
 
 
-import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeSerializer;
-import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeDeserializer;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 
 
 public class LwM2mAgent {
@@ -123,7 +106,7 @@ public class LwM2mAgent {
         }
 
         try {
-            ReadResponse response = server.send(registration, new ReadRequest(5000));
+            ReadResponse response = server.send(registration, new ReadRequest(33));
             LwM2mNode object = response.getContent();
             JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
             if (response.isSuccess()) {
@@ -161,8 +144,8 @@ public class LwM2mAgent {
                 "                          'value_type': 'float'},\n" +
                 "                         {'created': '2018-03-01T18:39:52.591380+00:00',\n" +
                 "                          'id': 164,\n" +
-                "                          'label': 'name',\n" +
-                "                          'static_value': 'test_template Rev01',\n" +
+                "                          'label': 'Model Number',\n" +
+                "                          'static_value': 'ExampleFW',\n" +
                 "                          'template_id': '53',\n" +
                 "                          'type': 'static',\n" +
                 "                          'value_type': 'string'}]},\n" +
@@ -186,10 +169,9 @@ public class LwM2mAgent {
             try {
                 String template = (String) templates.next();
                 JSONArray attrs = data.getJSONArray(template);
+                String newFwVersion = "";
+                String deviceLabel = "";
                 for (int i = 0; i < attrs.length(); i++) {
-                    String newFwVersion = "";
-                    String deviceLabel = "";
-
 
                     JSONObject attr = (JSONObject) attrs.get(i);
                     if (attr.getString("label").equals("fw_version")){
@@ -199,11 +181,14 @@ public class LwM2mAgent {
                         deviceLabel = attr.getString("static_value");
                     }
 
-                    String currentFwVersion = "1.0.0";
-                    if (!currentFwVersion.equals(newFwVersion)) {
-                        imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
-                    }
+
                 }
+
+                String currentFwVersion = "1.0.0";
+                if (!currentFwVersion.equals(newFwVersion)) {
+                    imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
+                }
+
 
             } catch (Exception e) {
                 e.printStackTrace();
