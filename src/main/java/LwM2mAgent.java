@@ -1,10 +1,21 @@
 package org.cpqd.iotagent;
 
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
 import com.google.gson.*;
 import com.mashape.unirest.http.*;
 
 //import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 import org.eclipse.leshan.core.model.LwM2mModel;
@@ -30,6 +41,7 @@ import org.eclipse.leshan.core.node.LwM2mNode;
 
 import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeSerializer;
 import org.eclipse.leshan.server.demo.servlet.json.LwM2mNodeDeserializer;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.script.Invocable;
@@ -37,7 +49,43 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 
+
 public class LwM2mAgent {
+
+
+    private static String url = "http://localhost:8000/image/";
+
+
+    private static HttpURLConnection con;
+
+    private static String GetJwtToken(String service) {
+        String token = "";
+        Integer[] group = new Integer[1];
+        group[0] = 1;
+
+        // TODO(jsiloto) Substitute mocked values with reasonable ones
+        try {
+            Algorithm algorithm = Algorithm.HMAC256("secret");
+            token = JWT.create()
+                    .withClaim("userid", 1)
+                    .withClaim("name", "Admin (superuser)")
+                    .withArrayClaim("groups", group)
+                    .withIssuedAt(new Date(1517339633))
+                    .withExpiresAt(new Date(1517340053))
+                    .withClaim("email", "admin@noemail.com")
+                    .withClaim("profile", "admin")
+                    .withIssuer("eGfIBvOLxz5aQxA92lFk5OExZmBMZDDh")
+                    .withClaim("service", service)
+                    .withJWTId("7e3086317df2c299cef280932da856e5")
+                    .withClaim("username", "admin")
+                    .sign(algorithm);
+        } catch (UnsupportedEncodingException exception) {
+            //UTF-8 encoding not supported
+        } catch (JWTCreationException exception) {
+            //Invalid Signing configuration / Couldn't convert Claims.
+        }
+        return token;
+    }
 
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
     private final static String[] modelPaths = new String[]{"5000.xml"};
@@ -69,6 +117,7 @@ public class LwM2mAgent {
         lampMapping.put("name", new Integer[]{5000, 0, 0});
         lampMapping.put("voltage", new Integer[]{5000, 0, 1});
         lampMapping.put("luminosity", new Integer[]{5000, 0, 2});
+        lampMapping.put("firmware", new Integer[]{5, 0, 1});
         return lampMapping;
     }
 
@@ -107,8 +156,84 @@ public class LwM2mAgent {
 
 
     // *********** Run Server *************** //
-    public void updateDevice() {
+    public String update(String message) {
+        message = "{'data': {'attrs': {'53': [{'created': '2018-03-01T18:39:52.589519+00:00',\n" +
+                "                          'id': 161,\n" +
+                "                          'label': 'fw_version',\n" +
+                "                          'static_value': '1.0.1',\n" +
+                "                          'template_id': '53',\n" +
+                "                          'type': 'static',\n" +
+                "                          'value_type': 'string'},\n" +
+                "                         {'created': '2018-03-01T18:39:52.590163+00:00',\n" +
+                "                          'id': 162,\n" +
+                "                          'label': 'voltage',\n" +
+                "                          'template_id': '53',\n" +
+                "                          'type': 'dynamic',\n" +
+                "                          'value_type': 'float'},\n" +
+                "                         {'created': '2018-03-01T18:39:52.590761+00:00',\n" +
+                "                          'id': 163,\n" +
+                "                          'label': 'luminosity',\n" +
+                "                          'template_id': '53',\n" +
+                "                          'type': 'actuator',\n" +
+                "                          'value_type': 'float'},\n" +
+                "                         {'created': '2018-03-01T18:39:52.591380+00:00',\n" +
+                "                          'id': 164,\n" +
+                "                          'label': 'name',\n" +
+                "                          'static_value': 'test_template Rev01',\n" +
+                "                          'template_id': '53',\n" +
+                "                          'type': 'static',\n" +
+                "                          'value_type': 'string'}]},\n" +
+                "          'id': 'f9b1',\n" +
+                "          'label': 'device',\n" +
+                "          'templates': [53]},\n" +
+                " 'event': 'update',\n" +
+                " 'meta': {'service': 'admin'}}\n";
 
+
+        JsonNode upd = new JsonNode(message);
+        JSONObject data = upd.getObject().getJSONObject("data");
+        String id = data.getString("id");
+        Registration registration = Devices.get(id);
+
+        data = data.getJSONObject("attrs");
+        Iterator<?> templates = data.keys();
+        while (templates.hasNext()) {
+            try {
+                String template = (String) templates.next();
+                JSONArray attrs = data.getJSONArray(template);
+                for (int i = 0; i < attrs.length(); i++) {
+                    JSONObject attr = (JSONObject) attrs.get(i);
+                    if (attr.getString("label").equals("fw_version") ) {
+//                        ReadResponse r_response = server.send(registration, new ReadRequest(5, 0, 1));
+//                        LwM2mNode object = r_response.getContent();
+//                        JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
+                        String new_version = attr.getString("static_value");
+                        String current_version = "1.0.0";
+                        if (current_version != new_version) {
+                            String token = GetJwtToken("admin");
+                            HttpResponse<InputStream> fwInStream = Unirest.get(url + "b60aa5e9-cbe6-4b51-b76c-08cf8273db07/binary")
+                                    .header("Authorization", "Bearer " + token)
+                                    .asBinary();
+
+                            InputStream in = fwInStream.getBody();
+                            Path path = FileSystems.getDefault().getPath("./fw");
+                            Files.copy(in, path);
+
+                        }
+
+
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println(e);
+            }
+
+        }
+
+
+        return "OK\n";
     }
 
     public String actuate(String message) {
@@ -117,22 +242,6 @@ public class LwM2mAgent {
                 " 'event': 'configure',\n" +
                 " 'meta': {'service': 'admin'}}";
 
-
-
-        try {
-            ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
-            engine.eval("load(\"" + "src" + "/" + "main" + "/" + "script.js" + "\");");
-
-            Invocable invocable = (Invocable) engine;
-
-            Object result = invocable.invokeFunction("fun1", "Peter Parker");
-            System.out.println(result);
-            System.out.println(result.getClass());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        
         JsonNode act = new JsonNode(message);
         JSONObject data = act.getObject().getJSONObject("data");
         String id = data.getString("id");

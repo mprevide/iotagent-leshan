@@ -48,40 +48,6 @@ import static spark.Spark.*;
 
 public class HelloWorld {
 
-    private static String url = "http://localhost:8000/image/";
-
-
-    private static HttpURLConnection con;
-
-    private static String GetJwtToken(String service){
-        String token = "";
-        Integer[] group = new Integer[1];
-        group[0] = 1;
-
-        // TODO(jsiloto) Substitute mocked values with reasonable ones
-        try {
-            Algorithm algorithm = Algorithm.HMAC256("secret");
-            token = JWT.create()
-                    .withClaim("userid", 1)
-                    .withClaim("name", "Admin (superuser)")
-                    .withArrayClaim("groups", group)
-                    .withIssuedAt(new Date(1517339633))
-                    .withExpiresAt(new Date(1517340053))
-                    .withClaim("email", "admin@noemail.com")
-                    .withClaim("profile", "admin")
-                    .withIssuer("eGfIBvOLxz5aQxA92lFk5OExZmBMZDDh")
-                    .withClaim("service", service)
-                    .withJWTId("7e3086317df2c299cef280932da856e5")
-                    .withClaim("username", "admin")
-                    .sign(algorithm);
-        } catch (UnsupportedEncodingException exception){
-            //UTF-8 encoding not supported
-        } catch (JWTCreationException exception){
-            //Invalid Signing configuration / Couldn't convert Claims.
-        }
-        return token;
-    }
-
     public static String myGet (){
         System.out.println("Get");
         return "Hello World";
@@ -94,7 +60,7 @@ public class HelloWorld {
     public static void main(String[] args) {
         LwM2mAgent agent = new LwM2mAgent();
 
-        get("/update", (req, res) -> "Hello World\n");
+        get("/update", (req, res) -> agent.update(req.body()));
         get("/actuate", (req, res) -> agent.actuate(req.body()));
 
 
