@@ -7,6 +7,8 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
 
+import org.cpqd.iotagent.LwM2mAgent;
+
 import static spark.Spark.get;
 
 public class LwM2MIoTAgent {
@@ -16,7 +18,7 @@ public class LwM2MIoTAgent {
         String imageManagerUrl = "http://localhost:8000";
         String deviceManagerUrl = "http://localhost:8001";
 
-        org.cpqd.iotagent.LwM2mAgent agent = new org.cpqd.iotagent.LwM2mAgent(deviceManagerUrl, imageManagerUrl);
+        LwM2mAgent agent = new LwM2mAgent(deviceManagerUrl, imageManagerUrl);
         agent.run();
 
 
