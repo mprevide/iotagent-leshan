@@ -5,16 +5,14 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
+import java.sql.Array;
+import java.util.*;
 
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.cpqd.iotagent.LwM2mAgent;
 import org.cpqd.iotagent.KafkaConsumerLoop;
 
 import org.apache.kafka.clients.consumer.*;
-import java.util.Properties;
 
 import static spark.Spark.get;
 
@@ -33,7 +31,8 @@ public class LwM2MIoTAgent {
         get("/actuate", (req, res) -> agent.actuate(req.body()));
 
 
-        KafkaConsumerLoop consumerLoop = new KafkaConsumerLoop(0, "dojot", Arrays.asList("test"));
+        KafkaConsumerLoop consumerLoop = new KafkaConsumerLoop(0, "dojot",
+                new LinkedList<String>(Arrays.asList("dojot.device-manager.device", "dojot.tenancy", "device-data")));
         consumerLoop.run();
 
 
