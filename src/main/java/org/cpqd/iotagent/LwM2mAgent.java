@@ -123,45 +123,42 @@ public class LwM2mAgent {
 
     // *********** Run Server *************** //
     public String update(String message) {
-        message = "{'data': {'attrs': {'53': [{'created': '2018-03-01T18:39:52.589519+00:00',\n" +
-                "                          'id': 161,\n" +
-                "                          'label': 'fw_version',\n" +
-                "                          'static_value': '1.0.1',\n" +
-                "                          'template_id': '53',\n" +
-                "                          'type': 'static',\n" +
-                "                          'value_type': 'string'},\n" +
-                "                         {'created': '2018-03-01T18:39:52.590163+00:00',\n" +
-                "                          'id': 162,\n" +
-                "                          'label': 'voltage',\n" +
-                "                          'template_id': '53',\n" +
-                "                          'type': 'dynamic',\n" +
-                "                          'value_type': 'float'},\n" +
-                "                         {'created': '2018-03-01T18:39:52.590761+00:00',\n" +
-                "                          'id': 163,\n" +
-                "                          'label': 'luminosity',\n" +
-                "                          'template_id': '53',\n" +
-                "                          'type': 'actuator',\n" +
-                "                          'value_type': 'float'},\n" +
-                "                         {'created': '2018-03-01T18:39:52.591380+00:00',\n" +
-                "                          'id': 164,\n" +
-                "                          'label': 'Model Number',\n" +
-                "                          'static_value': 'ExampleFW',\n" +
-                "                          'template_id': '53',\n" +
-                "                          'type': 'static',\n" +
-                "                          'value_type': 'string'}]},\n" +
-                "          'id': 'f9b1',\n" +
-                "          'label': 'device',\n" +
-                "          'templates': [53]},\n" +
-                " 'event': 'update',\n" +
-                " 'meta': {'service': 'admin'}}\n";
+//        message = "{'data': {'attrs': {'53': [{'created': '2018-03-01T18:39:52.589519+00:00',\n" +
+//                "                          'id': 161,\n" +
+//                "                          'label': 'fw_version',\n" +
+//                "                          'static_value': '1.0.1',\n" +
+//                "                          'template_id': '53',\n" +
+//                "                          'type': 'static',\n" +
+//                "                          'value_type': 'string'},\n" +
+//                "                         {'created': '2018-03-01T18:39:52.590163+00:00',\n" +
+//                "                          'id': 162,\n" +
+//                "                          'label': 'voltage',\n" +
+//                "                          'template_id': '53',\n" +
+//                "                          'type': 'dynamic',\n" +
+//                "                          'value_type': 'float'},\n" +
+//                "                         {'created': '2018-03-01T18:39:52.590761+00:00',\n" +
+//                "                          'id': 163,\n" +
+//                "                          'label': 'luminosity',\n" +
+//                "                          'template_id': '53',\n" +
+//                "                          'type': 'actuator',\n" +
+//                "                          'value_type': 'float'},\n" +
+//                "                         {'created': '2018-03-01T18:39:52.591380+00:00',\n" +
+//                "                          'id': 164,\n" +
+//                "                          'label': 'Model Number',\n" +
+//                "                          'static_value': 'ExampleFW',\n" +
+//                "                          'template_id': '53',\n" +
+//                "                          'type': 'static',\n" +
+//                "                          'value_type': 'string'}]},\n" +
+//                "          'id': 'f9b1',\n" +
+//                "          'label': 'device',\n" +
+//                "          'templates': [53]},\n" +
+//                " 'event': 'update',\n" +
+//                " 'meta': {'service': 'admin'}}\n";
 
 
-        JsonNode upd = new JsonNode(message);
-        JSONObject data = upd.getObject().getJSONObject("data");
-        String id = data.getString("id");
+        JSONObject data = new JSONObject(message);
+        String id = data.get("id").toString();
         Registration registration = Devices.get(id);
-
-
 
         data = data.getJSONObject("attrs");
         Iterator<?> templates = data.keys();

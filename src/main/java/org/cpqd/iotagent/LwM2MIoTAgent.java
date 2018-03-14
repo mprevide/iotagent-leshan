@@ -33,6 +33,9 @@ public class LwM2MIoTAgent {
 
         KafkaConsumerLoop consumerLoop = new KafkaConsumerLoop(0, "dojot",
                 new LinkedList<String>(Arrays.asList("dojot.device-manager.device", "dojot.tenancy", "device-data")));
+
+        consumerLoop.RegisterCallback("update", agent::update);
+        consumerLoop.RegisterCallback("actuate", agent::actuate);
         consumerLoop.run();
 
 

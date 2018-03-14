@@ -1,5 +1,6 @@
 package org.cpqd.iotagent;
 
+
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -10,26 +11,29 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.json.JSONObject;
 
 import java.util.*;
+import java.util.function.Function;
+
+
 
 // Copied shamelessly from https://www.confluent.io/blog/tutorial-getting-started-with-the-new-apache-kafka-0-9-consumer-client/
 
 public class KafkaConsumerLoop implements Runnable {
     private final KafkaConsumer<String, String> consumer;
+    private final Map<String, Function<String, String>> EventCallbacks = new HashMap<String, Function<String, String>>();
     private final List<String> topics;
     private final int id;
 
-    private  String TENANCY_MANAGER_SUBJECT = "dojot.tenancy";
+    private String TENANCY_MANAGER_SUBJECT = "dojot.tenancy";
     private String TENANCY_MANAGER_URL = "http://auth:5000";
-    private String DATA_BROKER_MANAGER = "http://localhost:80/topic/dojot.device-manager.device";
-
-
+    private String DATA_BROKER_MANAGER = "http://localhost:80/topic/dojot.device-manager.device";;
 
 
     public KafkaConsumerLoop(int id,
-                        String groupId,
-                        List<String> topics) {
+                             String groupId,
+                             List<String> topics) {
         this.id = id;
         this.topics = topics;
         String adminTopic = GetTopic("admin");
@@ -40,19 +44,41 @@ public class KafkaConsumerLoop implements Runnable {
         props.put("key.deserializer", StringDeserializer.class.getName());
         props.put("value.deserializer", StringDeserializer.class.getName());
         this.consumer = new KafkaConsumer<>(props);
+
+
     }
 
     private String GetTopic(String service) {
-        try{
+        try {
             String token = TenancyManager.GetJwtToken(service);
             HttpResponse<JsonNode> response = Unirest.get(DATA_BROKER_MANAGER)
                     .header("Authorization", "Bearer " + token).asJson();
             return response.getBody().getObject().getString("topic");
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return "";
+    }
+
+
+    public void RegisterCallback(String event, Function<String, String> callback) {
+        EventCallbacks.put(event, callback);
+    }
+
+    private void TreatMessage(String message) {
+
+
+        System.out.println(message);
+        JSONObject kafkaEvent = new JSONObject(message);
+        String event = kafkaEvent.get("event").toString();
+        String data = kafkaEvent.get("data").toString();
+
+        if(EventCallbacks.containsKey(event)){
+            EventCallbacks.get(event).apply(data);
+        }
+        else {
+            System.out.println(event + " : " + data);
+        }
     }
 
 
@@ -61,14 +87,7 @@ public class KafkaConsumerLoop implements Runnable {
         try {
             consumer.subscribe(topics);
 
-            Map<String, List<PartitionInfo> > topics = consumer.listTopics();
-            for (Map.Entry<String, List<PartitionInfo>> entry : topics.entrySet())
-            {
-                System.out.println(entry.getKey() + "/" + entry.getValue());
-            }
-
-
-            System.out.println(topics);
+            Map<String, List<PartitionInfo>> topics = consumer.listTopics();
 
 
             while (true) {
@@ -78,7 +97,7 @@ public class KafkaConsumerLoop implements Runnable {
                     data.put("partition", record.partition());
                     data.put("offset", record.offset());
                     data.put("value", record.value());
-                    System.out.println(this.id + ": " + data);
+                    TreatMessage(record.value());
                 }
             }
         } catch (WakeupException e) {
