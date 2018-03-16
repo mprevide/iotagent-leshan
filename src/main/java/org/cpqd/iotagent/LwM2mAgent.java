@@ -183,7 +183,8 @@ public class LwM2mAgent {
 
                 String currentFwVersion = "1.0.0";
                 if (!currentFwVersion.equals(newFwVersion)) {
-                    imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
+                    String imageID = imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
+                    WriteResponse response = server.send(registration, new WriteRequest(5, 0, 1, "coap://localhost:5693/data/" + imageID));
                 }
 
 

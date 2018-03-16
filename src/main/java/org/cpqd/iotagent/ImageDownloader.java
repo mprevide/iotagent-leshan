@@ -38,10 +38,11 @@ public class ImageDownloader {
         }
     }
 
-    public void FetchImage(String service, String deviceLabel, String version) {
+    public String FetchImage(String service, String deviceLabel, String version) {
         String token = TenancyManager.GetJwtToken(service);
         String imageID = GetImageId(deviceLabel, version, token);
         DownloadImage(imageID, token);
+        return imageID;
     }
 
     private String GetImageId(String deviceLabel, String version, String token) {
