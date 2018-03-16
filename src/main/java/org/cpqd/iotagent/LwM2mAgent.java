@@ -40,15 +40,11 @@ public class LwM2mAgent {
     private ImageDownloader imageDownloader;
 
 
-    LwM2mAgent(String deviceManagerUrl, String imageManagerUrl){
+    LwM2mAgent(String deviceManagerUrl, String imageManagerUrl) {
         this.deviceManagerUrl = deviceManagerUrl;
         this.imageManagerUrl = imageManagerUrl;
         imageDownloader = new ImageDownloader(imageManagerUrl);
     }
-
-
-
-
 
 
     private static HttpURLConnection con;
@@ -123,76 +119,46 @@ public class LwM2mAgent {
 
     // *********** Run Server *************** //
     public String update(String message) {
-//        message = "{'data': {'attrs': {'53': [{'created': '2018-03-01T18:39:52.589519+00:00',\n" +
-//                "                          'id': 161,\n" +
-//                "                          'label': 'fw_version',\n" +
-//                "                          'static_value': '1.0.1',\n" +
-//                "                          'template_id': '53',\n" +
-//                "                          'type': 'static',\n" +
-//                "                          'value_type': 'string'},\n" +
-//                "                         {'created': '2018-03-01T18:39:52.590163+00:00',\n" +
-//                "                          'id': 162,\n" +
-//                "                          'label': 'voltage',\n" +
-//                "                          'template_id': '53',\n" +
-//                "                          'type': 'dynamic',\n" +
-//                "                          'value_type': 'float'},\n" +
-//                "                         {'created': '2018-03-01T18:39:52.590761+00:00',\n" +
-//                "                          'id': 163,\n" +
-//                "                          'label': 'luminosity',\n" +
-//                "                          'template_id': '53',\n" +
-//                "                          'type': 'actuator',\n" +
-//                "                          'value_type': 'float'},\n" +
-//                "                         {'created': '2018-03-01T18:39:52.591380+00:00',\n" +
-//                "                          'id': 164,\n" +
-//                "                          'label': 'Model Number',\n" +
-//                "                          'static_value': 'ExampleFW',\n" +
-//                "                          'template_id': '53',\n" +
-//                "                          'type': 'static',\n" +
-//                "                          'value_type': 'string'}]},\n" +
-//                "          'id': 'f9b1',\n" +
-//                "          'label': 'device',\n" +
-//                "          'templates': [53]},\n" +
-//                " 'event': 'update',\n" +
-//                " 'meta': {'service': 'admin'}}\n";
-
-
         JSONObject data = new JSONObject(message);
+
+        // Retrieve device id
         String id = data.get("id").toString();
         Registration registration = Devices.get(id);
 
+        // Get device label and new FW Version
         data = data.getJSONObject("attrs");
         Iterator<?> templates = data.keys();
+        String newFwVersion = "";
+        String deviceLabel = "";
         while (templates.hasNext()) {
+            String template = (String) templates.next();
+            JSONArray attrs = data.getJSONArray(template);
+
+            for (int i = 0; i < attrs.length(); i++) {
+
+                JSONObject attr = (JSONObject) attrs.get(i);
+                if (attr.getString("label").equals("fw_version")) {
+                    newFwVersion = attr.getString("static_value");
+                }
+                if (attr.getString("label").equals("device_type")) {
+                    deviceLabel = attr.getString("static_value");
+                }
+            }
+        }
+
+        // Get device current FW version
+        // TODO(jsiloto): Retrieve fw version from device
+        String currentFwVersion = "1.0.0";
+
+        // If Version has changed Update
+        if (!currentFwVersion.equals(newFwVersion)) {
             try {
-                String template = (String) templates.next();
-                JSONArray attrs = data.getJSONArray(template);
-                String newFwVersion = "";
-                String deviceLabel = "";
-                for (int i = 0; i < attrs.length(); i++) {
-
-                    JSONObject attr = (JSONObject) attrs.get(i);
-                    if (attr.getString("label").equals("fw_version")){
-                        newFwVersion = attr.getString("static_value");
-                    }
-                    if (attr.getString("label").equals("device_type")){
-                        deviceLabel = attr.getString("static_value");
-                    }
-
-
-                }
-
-                String currentFwVersion = "1.0.0";
-                if (!currentFwVersion.equals(newFwVersion)) {
-                    String imageID = imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
-                    WriteResponse response = server.send(registration, new WriteRequest(5, 0, 1, "coap://localhost:5693/data/" + imageID));
-                }
-
-
+                String imageID = imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
+                WriteResponse response = server.send(registration, new WriteRequest(5, 0, 1, "coap://localhost:5693/data/" + imageID));
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println(e);
             }
-
         }
 
 
