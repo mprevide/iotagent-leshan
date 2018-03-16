@@ -28,6 +28,14 @@ public class ImageDownloader {
 
     public ImageDownloader(String imageManagerUrl) {
         this.imageUrl = imageManagerUrl + "/image/";
+        try{
+            Path path = FileSystems.getDefault().getPath("./fw/");
+            if(!Files.exists(path)){
+                Files.createDirectory(path);
+            }
+        }
+        catch(Exception e){
+        }
     }
 
     public void FetchImage(String service, String deviceLabel, String version) {
@@ -48,7 +56,8 @@ public class ImageDownloader {
                 JSONObject image = images.getJSONObject(i);
                 String d = image.getString("label");
                 String f = image.getString("fw_version");
-                if(d.equals(deviceLabel) && f.equals(version)){
+                Boolean haveBinary = image.getBoolean("confirmed");
+                if(d.equals(deviceLabel) && f.equals(version) && haveBinary){
                     return image.getString("id");
                 }
             }
@@ -69,6 +78,9 @@ public class ImageDownloader {
 
             InputStream in = fwInStream.getBody();
             Path path = FileSystems.getDefault().getPath("./fw/"+imageId);
+            if(!Files.exists(path)){
+                Files.createFile(path);
+            }
             Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             e.printStackTrace();

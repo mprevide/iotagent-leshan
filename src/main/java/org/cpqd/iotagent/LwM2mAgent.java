@@ -174,7 +174,7 @@ public class LwM2mAgent {
                     if (attr.getString("label").equals("fw_version")){
                         newFwVersion = attr.getString("static_value");
                     }
-                    if (attr.getString("label").equals("Model Number")){
+                    if (attr.getString("label").equals("device_type")){
                         deviceLabel = attr.getString("static_value");
                     }
 

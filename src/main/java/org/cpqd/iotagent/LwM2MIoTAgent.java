@@ -20,8 +20,8 @@ public class LwM2MIoTAgent {
 
 
     public static void main(String[] args) {
-        String imageManagerUrl = "http://localhost:8000";
-        String deviceManagerUrl = "http://localhost:8001";
+        String imageManagerUrl = "http://localhost:5000";
+        String deviceManagerUrl = "http://localhost:5001";
 
         LwM2mAgent agent = new LwM2mAgent(deviceManagerUrl, imageManagerUrl);
         agent.run();
