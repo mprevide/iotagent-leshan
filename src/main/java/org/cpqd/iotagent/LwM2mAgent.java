@@ -38,12 +38,14 @@ public class LwM2mAgent {
     private String imageManagerUrl;
     private String deviceManagerUrl;
     private ImageDownloader imageDownloader;
+    private DeviceManager deviceManager;
 
 
     LwM2mAgent(String deviceManagerUrl, String imageManagerUrl) {
         this.deviceManagerUrl = deviceManagerUrl;
         this.imageManagerUrl = imageManagerUrl;
         imageDownloader = new ImageDownloader(imageManagerUrl);
+        deviceManager = new DeviceManager(deviceManagerUrl);
     }
 
 
@@ -88,6 +90,38 @@ public class LwM2mAgent {
     private void registerNewDevice(Registration registration, Registration previousReg,
                                    Collection<Observation> previousObsersations) {
 
+        //Get ID
+
+        // Check device manager if device exists, if not drop
+        try {
+            ReadResponse response = server.send(registration, new ReadRequest(3, 0, 1));
+            System.out.println(response.getContent());
+            String DeviceModel = gson.toJsonTree(response.getContent()).getAsJsonObject().get("value").toString().replaceAll("^\"|\"$", "");
+
+            response = server.send(registration, new ReadRequest(3, 0, 2));
+            String SerialNumber = gson.toJsonTree(response.getContent()).getAsJsonObject().get("value").toString().replaceAll("^\"|\"$", "");
+            System.out.println(DeviceModel + " / " + SerialNumber);
+
+            String Lwm2mId = registration.getId();
+
+            deviceManager.RegisterDevice("admin", Lwm2mId, DeviceModel, SerialNumber);
+
+
+
+        } catch( Exception e){
+
+        }
+
+
+
+
+
+
+
+
+
+
+
         System.out.println(registration.getId());
         //Devices.put(registration.getId(), registration);
         Devices.put("f9b1", registration);
@@ -126,16 +160,14 @@ public class LwM2mAgent {
         Registration registration = Devices.get(id);
 
         // Get device label and new FW Version
-        data = data.getJSONObject("attrs");
-        Iterator<?> templates = data.keys();
         String newFwVersion = "";
         String deviceLabel = "";
+        data = data.getJSONObject("attrs");
+        Iterator<?> templates = data.keys();
         while (templates.hasNext()) {
             String template = (String) templates.next();
             JSONArray attrs = data.getJSONArray(template);
-
             for (int i = 0; i < attrs.length(); i++) {
-
                 JSONObject attr = (JSONObject) attrs.get(i);
                 if (attr.getString("label").equals("fw_version")) {
                     newFwVersion = attr.getString("static_value");

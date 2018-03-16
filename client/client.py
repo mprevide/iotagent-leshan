@@ -23,6 +23,12 @@ template1 = {
             "type": "static",
             "value_type": "string",
             "static_value": "ExampleFW"
+        },
+        {
+            "label": "serial_number",
+            "type": "static",
+            "value_type": "string",
+            "static_value": "123456789"
         }
     ]
 }
