@@ -3,6 +3,7 @@ package org.cpqd.iotagent;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
+import org.json.JSONObject;
 
 public class DeviceManager {
 
@@ -19,7 +20,9 @@ public class DeviceManager {
 
         try {
             HttpResponse<JsonNode> response = Unirest.get(url).header("Authorization", "Bearer " + token).asJson();
-            System.out.println(response.getBody());
+            JsonNode r = response.getBody();
+            String id = r.getObject().getJSONArray("devices").getJSONObject(0).get("id").toString();
+            System.out.println(id);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
