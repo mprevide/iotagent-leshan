@@ -14,6 +14,7 @@ import org.eclipse.leshan.core.model.ObjectModel;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
 import org.eclipse.leshan.core.node.codec.LwM2mNodeDecoder;
+import org.eclipse.leshan.core.request.DeregisterRequest;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.core.response.WriteResponse;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
@@ -104,31 +105,12 @@ public class LwM2mAgent {
 
             String Lwm2mId = registration.getId();
 
-            deviceManager.RegisterDevice("admin", Lwm2mId, DeviceModel, SerialNumber);
-
-
+            deviceManager.RegisterDevice("admin", Lwm2mId, DeviceModel, SerialNumber, registration);
+            // Register listeners for dynamic data
 
         } catch( Exception e){
 
         }
-
-
-
-
-
-
-
-
-
-
-
-        System.out.println(registration.getId());
-        //Devices.put(registration.getId(), registration);
-        Devices.put("f9b1", registration);
-        // Request Device from device-manager
-        getDeviceFromDeviceManager("asv");
-        // Register listeners for dynamic data
-
 
         System.out.println("new device: " + registration.getEndpoint());
         for (int i = 0; i < registration.getObjectLinks().length; i++) {
@@ -136,7 +118,7 @@ public class LwM2mAgent {
         }
 
         try {
-            ReadResponse response = server.send(registration, new ReadRequest(33));
+            ReadResponse response = server.send(registration, new ReadRequest(3));
             LwM2mNode object = response.getContent();
             JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
             if (response.isSuccess()) {
@@ -156,27 +138,13 @@ public class LwM2mAgent {
         JSONObject data = new JSONObject(message);
 
         // Retrieve device id
+
         String id = data.get("id").toString();
-        Registration registration = Devices.get(id);
+        Registration registration = deviceManager.getRegistration(id);
 
         // Get device label and new FW Version
-        String newFwVersion = "";
-        String deviceLabel = "";
-        data = data.getJSONObject("attrs");
-        Iterator<?> templates = data.keys();
-        while (templates.hasNext()) {
-            String template = (String) templates.next();
-            JSONArray attrs = data.getJSONArray(template);
-            for (int i = 0; i < attrs.length(); i++) {
-                JSONObject attr = (JSONObject) attrs.get(i);
-                if (attr.getString("label").equals("fw_version")) {
-                    newFwVersion = attr.getString("static_value");
-                }
-                if (attr.getString("label").equals("device_type")) {
-                    deviceLabel = attr.getString("static_value");
-                }
-            }
-        }
+        String newFwVersion = DeviceManager.getStaticValue("fw_version", data);
+        String deviceLabel = DeviceManager.getStaticValue("device_type", data);
 
         // Get device current FW version
         // TODO(jsiloto): Retrieve fw version from device
@@ -186,13 +154,12 @@ public class LwM2mAgent {
         if (!currentFwVersion.equals(newFwVersion)) {
             try {
                 String imageID = imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
-                WriteResponse response = server.send(registration, new WriteRequest(5, 0, 1, "coap://localhost:5693/data/" + imageID));
+                WriteResponse response = server.send(registration, new WriteRequest(5, 0, 1, "coap://[2001:db8::2]:5693/data/" + imageID + ".hex"));
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println(e);
             }
         }
-
 
         return "OK\n";
     }
