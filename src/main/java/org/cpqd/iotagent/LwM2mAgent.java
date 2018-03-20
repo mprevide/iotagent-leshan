@@ -4,7 +4,6 @@ package org.cpqd.iotagent;
 import com.google.gson.*;
 import com.mashape.unirest.http.*;
 
-//import java.io.DataOutputStream;
 import java.net.HttpURLConnection;
 import java.util.*;
 
@@ -14,7 +13,6 @@ import org.eclipse.leshan.core.model.ObjectModel;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
 import org.eclipse.leshan.core.node.codec.LwM2mNodeDecoder;
-import org.eclipse.leshan.core.request.DeregisterRequest;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.core.response.WriteResponse;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
@@ -25,12 +23,9 @@ import org.eclipse.leshan.server.registration.RegistrationListener;
 import org.eclipse.leshan.server.registration.Registration;
 import org.eclipse.leshan.server.registration.RegistrationUpdate;
 import org.eclipse.leshan.core.observation.Observation;
-import org.eclipse.leshan.core.response.ReadResponse;
-import org.eclipse.leshan.core.request.ReadRequest;
 import org.eclipse.leshan.core.node.LwM2mNode;
 
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 
@@ -89,7 +84,7 @@ public class LwM2mAgent {
         System.out.println(DeviceModel + " / " + SerialNumber);
         String Lwm2mId = registration.getId();
         deviceManager.RegisterDevice("admin", Lwm2mId, DeviceModel, SerialNumber, registration);
-        // Register listeners for dynamic data
+        // TODO(jsiloto) Register listeners for dynamic data
 
 
         // TODO(jsiloto): Is anything bellow this line useful?
@@ -97,20 +92,6 @@ public class LwM2mAgent {
         for (int i = 0; i < registration.getObjectLinks().length; i++) {
             System.out.println(registration.getObjectLinks()[i]);
         }
-
-//        try {
-//            ReadResponse response = server.send(registration, new ReadRequest(3));
-//            LwM2mNode object = response.getContent();
-//            JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
-//            if (response.isSuccess()) {
-//                System.out.println("Device: " + response.getContent());
-//                System.out.println("Device: " + jo);
-//            } else {
-//                System.out.println("Failed to read:" + response.getCode() + " " + response.getErrorMessage());
-//            }
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
     }
 
 
@@ -225,7 +206,6 @@ public class LwM2mAgent {
             modelProvider = new StaticModelProvider(models);
             builder.setObjectModelProvider(modelProvider);
 
-
             // Start Server
             server = builder.build();
             server.start();
@@ -236,57 +216,8 @@ public class LwM2mAgent {
             // Initialize Request Handler
             requestHandler = new LwM2mHandler(server, gson);
 
-
-//            ReadResponse r_response = server.send(registration, new ReadRequest(5000, 0));
-//            LwM2mNode object = r_response.getContent();
-//            System.out.println("Device:" + object);
-//            JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
-//            JsonArray resources = jo.getAsJsonArray("resources");
-//            JsonArray modified_resources = new JsonArray();
-//            JsonObject name = resources.get(8).getAsJsonObject(); // get object with id 14 not at [14]
-//            name.addProperty("value", "-1");
-//            modified_resources.add(name);
-//            jo.add("resources", modified_resources);
-//            System.out.println("Modified Resources:" + modified_resources);
-//            object = gson.fromJson(jo, LwM2mNode.class);
-//
-////                        ArrayList<LwM2mNode> re = new ArrayList<LwM2mNode>();
-////                        re.add(new LwM2mSingleResource(object));
-//
-//            LwM2mSingleResource node = LwM2mSingleResource.newResource(14, Long.valueOf(-1), Type.INTEGER);
-//
-//
-//            System.out.println("Instances:" + object);
-//            WriteResponse w_response = server.send(registration, new WriteRequest(WriteRequest.Mode.REPLACE, ContentFormat.TLV, "/3/0", object));
-//
-//
-//            r_response = server.send(registration, new ReadRequest(3, 0));
-//            object = r_response.getContent();
-//            System.out.println("Device:" + object);
-
-
-//                      WriteResponse response = server.send(registration, new WriteRequest(5,0,1, "coap://[2001:db8::2]:5693/data/test.hex") );
-
-
-//            System.out.println("Hello, World!");
-//
-//            String token = GetJwtToken("admin");
-//
-//            HttpResponse<InputStream> jsonResponse = Unirest.get(url+"b60aa5e9-cbe6-4b51-b76c-08cf8273db07/binary")
-//                    .header("Authorization", "Bearer " + token)
-//                    .asBinary();
-//
-//            System.out.println(jsonResponse.getStatus());
-//            System.out.println(jsonResponse.getStatusText());
-//            System.out.println(jsonResponse.getBody());
-
-
         } catch (Exception e) {
-            // printStackTrace method
-            // prints line numbers + call stack
             e.printStackTrace();
-
-            // Prints what exception has been thrown
             System.out.println(e);
         }
     }
