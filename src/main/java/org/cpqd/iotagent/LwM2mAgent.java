@@ -40,32 +40,23 @@ public class LwM2mAgent {
     private String deviceManagerUrl;
     private ImageDownloader imageDownloader;
     private DeviceManager deviceManager;
+    private LwM2mHandler requestHandler;
+    private Gson gson;
+    private LeshanServer server;
+    private LwM2mModelProvider modelProvider;
 
+    private static HttpURLConnection con;
+    private final static String[] modelPaths = new String[]{"5000.xml"};
 
     LwM2mAgent(String deviceManagerUrl, String imageManagerUrl) {
         this.deviceManagerUrl = deviceManagerUrl;
         this.imageManagerUrl = imageManagerUrl;
+        this.gson = gson = createGson();
         imageDownloader = new ImageDownloader(imageManagerUrl);
         deviceManager = new DeviceManager(deviceManagerUrl);
     }
 
-
-    private static HttpURLConnection con;
-
-    private Map<String, Registration> Devices = new HashMap<String, Registration>();
-    private final static String[] modelPaths = new String[]{"5000.xml"};
-    private LeshanServer server;
-    LwM2mModelProvider modelProvider;
-
-
-    // *********** Static Methods *************** //
-    private static void getDeviceFromDeviceManager(String id) {
-    }
-
-
     // *********** Instance Initialization *************** //
-    private static Gson gson = createGson();
-
     private static Gson createGson() {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeHierarchyAdapter(LwM2mNode.class, new LwM2mNodeSerializer());
@@ -93,23 +84,12 @@ public class LwM2mAgent {
         //Get ID
 
         // Check device manager if device exists, if not drop
-        try {
-            ReadResponse response = server.send(registration, new ReadRequest(3, 0, 1));
-            System.out.println(response.getContent());
-            String DeviceModel = gson.toJsonTree(response.getContent()).getAsJsonObject().get("value").toString().replaceAll("^\"|\"$", "");
-
-            response = server.send(registration, new ReadRequest(3, 0, 2));
-            String SerialNumber = gson.toJsonTree(response.getContent()).getAsJsonObject().get("value").toString().replaceAll("^\"|\"$", "");
-            System.out.println(DeviceModel + " / " + SerialNumber);
-
-            String Lwm2mId = registration.getId();
-
-            deviceManager.RegisterDevice("admin", Lwm2mId, DeviceModel, SerialNumber, registration);
-            // Register listeners for dynamic data
-
-        } catch( Exception e){
-
-        }
+        String DeviceModel = requestHandler.ReadResource(registration, 3, 0, 1);
+        String SerialNumber = requestHandler.ReadResource(registration, 3, 0, 2);
+        System.out.println(DeviceModel + " / " + SerialNumber);
+        String Lwm2mId = registration.getId();
+        deviceManager.RegisterDevice("admin", Lwm2mId, DeviceModel, SerialNumber, registration);
+        // Register listeners for dynamic data
 
 
         // TODO(jsiloto): Is anything bellow this line useful?
@@ -118,19 +98,19 @@ public class LwM2mAgent {
             System.out.println(registration.getObjectLinks()[i]);
         }
 
-        try {
-            ReadResponse response = server.send(registration, new ReadRequest(3));
-            LwM2mNode object = response.getContent();
-            JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
-            if (response.isSuccess()) {
-                System.out.println("Device: " + response.getContent());
-                System.out.println("Device: " + jo);
-            } else {
-                System.out.println("Failed to read:" + response.getCode() + " " + response.getErrorMessage());
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            ReadResponse response = server.send(registration, new ReadRequest(3));
+//            LwM2mNode object = response.getContent();
+//            JsonObject jo = gson.toJsonTree(object).getAsJsonObject();
+//            if (response.isSuccess()) {
+//                System.out.println("Device: " + response.getContent());
+//                System.out.println("Device: " + jo);
+//            } else {
+//                System.out.println("Failed to read:" + response.getCode() + " " + response.getErrorMessage());
+//            }
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
 
@@ -142,7 +122,7 @@ public class LwM2mAgent {
 
         String id = data.get("id").toString();
         Registration registration = deviceManager.getDeviceRegistration(id);
-        if(registration == null){
+        if (registration == null) {
             return "NOK\n";
         }
 
@@ -150,36 +130,19 @@ public class LwM2mAgent {
         System.out.println(registration);
 
 
-
         // Get device label and new FW Version
         String newFwVersion = DeviceManager.getStaticValue("fw_version", data);
         String deviceLabel = DeviceManager.getStaticValue("device_type", data);
 
         // Get device current FW version
-        // TODO(jsiloto): Retrieve fw version from device
-        String currentFwVersion = "1.0.0";
-        try {
-            ReadResponse response = server.send(registration, new ReadRequest(3, 0, 3));
-            LwM2mNode object = response.getContent();
-            currentFwVersion = gson.toJsonTree(response.getContent()).getAsJsonObject().get("value").getAsString();
-            System.out.println(response.getContent());
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-        }
-
-
-
+        String currentFwVersion = requestHandler.ReadResource(registration, 3, 0, 3);
 
         // If Version has changed Update
         if (!currentFwVersion.equals(newFwVersion)) {
-            try {
-                String imageID = imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
-                WriteResponse response = server.send(registration, new WriteRequest(5, 0, 1, "coap://[2001:db8::2]:5693/data/" + imageID + ".hex"));
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println(e);
-            }
+            String imageID = imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
+            String fileserverUrl = "coap://[2001:db8::2]:5693/data/";
+            String fileUrl = fileserverUrl + imageID + ".hex";
+            requestHandler.WriteResource(registration, 5, 0, 1, fileUrl);
         }
 
         return "OK\n";
@@ -194,7 +157,7 @@ public class LwM2mAgent {
         JsonNode act = new JsonNode(message);
         JSONObject data = act.getObject().getJSONObject("data");
         String id = data.getString("id");
-        Registration registration = Devices.get(id);
+        Registration registration = deviceManager.getDeviceRegistration(id);
 
         LwM2mModel model = modelProvider.getObjectModel(registration);
         Collection<ObjectModel> models = model.getObjectModels();
@@ -234,10 +197,9 @@ public class LwM2mAgent {
         }
 
         public void updated(RegistrationUpdate update, Registration updatedReg, Registration previousReg) {
-            if(deviceManager.getLwm2mRegistration(updatedReg.getId())== null){
+            if (deviceManager.getLwm2mRegistration(updatedReg.getId()) == null) {
                 registerNewDevice(updatedReg);
             }
-
         }
 
         public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
@@ -270,6 +232,9 @@ public class LwM2mAgent {
 
             // Add Registration Treatment
             server.getRegistrationService().addListener(listener);
+
+            // Initialize Request Handler
+            requestHandler = new LwM2mHandler(server, gson);
 
 
 //            ReadResponse r_response = server.send(registration, new ReadRequest(5000, 0));
