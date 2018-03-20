@@ -49,6 +49,9 @@ public class DeviceManager {
 
         try {
             HttpResponse<JsonNode> response = Unirest.get(url).header("Authorization", "Bearer " + token).asJson();
+            if(response.getStatus() >= 300){
+                return;
+            }
             JsonNode r = response.getBody();
             String id = r.getObject().getJSONArray("devices").getJSONObject(0).get("id").toString();
             Devices.put(id, registration);
