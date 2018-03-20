@@ -88,8 +88,7 @@ public class LwM2mAgent {
 
     // ********* Methods ****************** //
 
-    private void registerNewDevice(Registration registration, Registration previousReg,
-                                   Collection<Observation> previousObsersations) {
+    private void registerNewDevice(Registration registration) {
 
         //Get ID
 
@@ -112,6 +111,8 @@ public class LwM2mAgent {
 
         }
 
+
+        // TODO(jsiloto): Is anything bellow this line useful?
         System.out.println("new device: " + registration.getEndpoint());
         for (int i = 0; i < registration.getObjectLinks().length; i++) {
             System.out.println(registration.getObjectLinks()[i]);
@@ -140,7 +141,15 @@ public class LwM2mAgent {
         // Retrieve device id
 
         String id = data.get("id").toString();
-        Registration registration = deviceManager.getRegistration(id);
+        Registration registration = deviceManager.getDeviceRegistration(id);
+        if(registration == null){
+            return "NOK\n";
+        }
+
+
+        System.out.println(registration);
+
+
 
         // Get device label and new FW Version
         String newFwVersion = DeviceManager.getStaticValue("fw_version", data);
@@ -149,6 +158,18 @@ public class LwM2mAgent {
         // Get device current FW version
         // TODO(jsiloto): Retrieve fw version from device
         String currentFwVersion = "1.0.0";
+        try {
+            ReadResponse response = server.send(registration, new ReadRequest(3, 0, 3));
+            LwM2mNode object = response.getContent();
+            currentFwVersion = gson.toJsonTree(response.getContent()).getAsJsonObject().get("value").getAsString();
+            System.out.println(response.getContent());
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+
+
+
 
         // If Version has changed Update
         if (!currentFwVersion.equals(newFwVersion)) {
@@ -209,15 +230,20 @@ public class LwM2mAgent {
     RegistrationListener listener = new RegistrationListener() {
         public void registered(Registration registration, Registration previousReg,
                                Collection<Observation> previousObsersations) {
-            registerNewDevice(registration, previousReg, previousObsersations);
+            registerNewDevice(registration);
         }
 
         public void updated(RegistrationUpdate update, Registration updatedReg, Registration previousReg) {
+            if(deviceManager.getLwm2mRegistration(updatedReg.getId())== null){
+                registerNewDevice(updatedReg);
+            }
+
         }
 
         public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
                                  Registration newReg) {
             System.out.println("device left: " + registration.getEndpoint());
+            deviceManager.DeregisterDevice(registration.getId());
         }
     };
 

@@ -78,7 +78,7 @@ public class ImageDownloader {
                     .asBinary();
 
             InputStream in = fwInStream.getBody();
-            Path path = FileSystems.getDefault().getPath("./fw/"+imageId);
+            Path path = FileSystems.getDefault().getPath("./fw/"+imageId+".hex");
             if(!Files.exists(path)){
                 Files.createFile(path);
             }

@@ -17,7 +17,6 @@ import java.util.*;
 import java.util.function.Function;
 
 
-
 // Copied shamelessly from https://www.confluent.io/blog/tutorial-getting-started-with-the-new-apache-kafka-0-9-consumer-client/
 
 public class KafkaConsumerLoop implements Runnable {
@@ -28,7 +27,8 @@ public class KafkaConsumerLoop implements Runnable {
 
     private String TENANCY_MANAGER_SUBJECT = "dojot.tenancy";
     private String TENANCY_MANAGER_URL = "http://auth:5000";
-    private String DATA_BROKER_MANAGER = "http://localhost:80/topic/dojot.device-manager.device";;
+    private String DATA_BROKER_MANAGER = "http://localhost:80/topic/dojot.device-manager.device";
+    ;
 
 
     public KafkaConsumerLoop(int id,
@@ -66,18 +66,20 @@ public class KafkaConsumerLoop implements Runnable {
     }
 
     private void TreatMessage(String message) {
+        try {
 
+            System.out.println(message);
+            JSONObject kafkaEvent = new JSONObject(message);
+            String event = kafkaEvent.get("event").toString();
+            String data = kafkaEvent.get("data").toString();
 
-        System.out.println(message);
-        JSONObject kafkaEvent = new JSONObject(message);
-        String event = kafkaEvent.get("event").toString();
-        String data = kafkaEvent.get("data").toString();
+            if (EventCallbacks.containsKey(event)) {
+                EventCallbacks.get(event).apply(data);
+            } else {
+                System.out.println(event + " : " + data);
+            }
+        } catch (Exception e) {
 
-        if(EventCallbacks.containsKey(event)){
-            EventCallbacks.get(event).apply(data);
-        }
-        else {
-            System.out.println(event + " : " + data);
         }
     }
 
@@ -89,8 +91,8 @@ public class KafkaConsumerLoop implements Runnable {
 
             Map<String, List<PartitionInfo>> topics = consumer.listTopics();
 
-
             while (true) {
+
                 ConsumerRecords<String, String> records = consumer.poll(Long.MAX_VALUE);
                 for (ConsumerRecord<String, String> record : records) {
                     Map<String, Object> data = new HashMap<>();
@@ -101,7 +103,7 @@ public class KafkaConsumerLoop implements Runnable {
                 }
             }
         } catch (WakeupException e) {
-            // ignore for shutdown 
+            // ignore for shutdown
         } finally {
             consumer.close();
         }
