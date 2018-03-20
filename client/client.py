@@ -10,7 +10,7 @@ iotc.upload_image("example.hex", "ExampleFW", "1.0.1", "0")
 
 
 template1 = {
-    "label": "test_template",
+    "label": 'Template_1_0_0',
     "attrs": [
         {
             "label": "fw_version",
@@ -34,6 +34,7 @@ template1 = {
 }
 
 template2 = deepcopy(template1)
+template2['label'] = 'Template_1_0_1'
 for attr in template2['attrs']:
     if attr['label'] == 'fw_version':
         attr['static_value'] = '1.0.1'
