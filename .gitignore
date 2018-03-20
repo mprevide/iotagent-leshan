@@ -1,7 +1,7 @@
 target/
 fw/
 iotagent.iml
-
+*.pyc
 
 
 
