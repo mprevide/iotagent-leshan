@@ -47,8 +47,17 @@ public class LwM2mAgent {
         this.deviceManagerUrl = deviceManagerUrl;
         this.imageManagerUrl = imageManagerUrl;
         this.gson = gson = createGson();
+
+
+        // Define model provider
+//            List<ObjectModel> models = ObjectLoader.loadDefault();
+        List<ObjectModel> models = new LinkedList<ObjectModel>();
+//            models.addAll(ObjectLoader.loadDdfResources("/models/", modelPaths));
+        DinamicModelProvider dynamDinamicModelProvider = new DinamicModelProvider(models);
+        modelProvider = dynamDinamicModelProvider;
         imageDownloader = new ImageDownloader(imageManagerUrl);
-        deviceManager = new DeviceManager(deviceManagerUrl);
+        deviceManager = new DeviceManager(deviceManagerUrl, dynamDinamicModelProvider);
+
     }
 
     // *********** Instance Initialization *************** //
@@ -96,6 +105,15 @@ public class LwM2mAgent {
 
 
     // *********** Run Server *************** //
+    public String create(String message) {
+        JsonElement o = new JsonParser().parse(message);
+        deviceManager.RegisterModel(gson.toJsonTree(o));
+
+
+        return "OK\n";
+    }
+
+
     public String update(String message) {
         JSONObject data = new JSONObject(message);
 
@@ -128,6 +146,10 @@ public class LwM2mAgent {
 
         return "OK\n";
     }
+
+
+
+
 
     public String actuate(String message) {
 
@@ -201,10 +223,10 @@ public class LwM2mAgent {
             builder.setDecoder(decoder);
 
             // Define model provider
-            List<ObjectModel> models = ObjectLoader.loadDefault();
-            models.addAll(ObjectLoader.loadDdfResources("/models/", modelPaths));
-            modelProvider = new StaticModelProvider(models);
             builder.setObjectModelProvider(modelProvider);
+
+
+
 
             // Start Server
             server = builder.build();

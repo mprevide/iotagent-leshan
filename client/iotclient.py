@@ -36,11 +36,10 @@ class IotClient(object):
 
 
 
-    def upload_image(self, filename, device, fw_version, hw_version):
+    def upload_image(self, filename, device, fw_version):
         payload = {
             "label": device,
             "fw_version": fw_version,
-            "hw_version": hw_version,
             "sha1": get_sha1(filename).hexdigest()
         }
 
