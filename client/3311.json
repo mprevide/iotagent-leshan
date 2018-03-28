@@ -8,16 +8,10 @@
           "value_type": "string",
           "static_value": "/3311/0/5850",
           "label": "oi"
-        },
-        {
-          "type": "meta",
-          "value_type": "string",
-          "static_value": null,
-          "label": "unit"
         }
       ],
-      "type": "actuate",
-      "label": "On/Off"
+      "type": "actuator",
+      "label": "Light Control: On/Off"
     },
     {
       "value_type": "integer",
@@ -35,8 +29,8 @@
           "label": "unit"
         }
       ],
-      "type": "actuate",
-      "label": "Dimmer"
+      "type": "actuator",
+      "label": "Light Control: Dimmer"
     },
     {
       "value_type": "integer",
@@ -54,8 +48,8 @@
           "label": "unit"
         }
       ],
-      "type": "actuate",
-      "label": "On Time"
+      "type": "actuator",
+      "label": "Light Control: On Time"
     },
     {
       "value_type": "float",
@@ -75,7 +69,7 @@
         }
       ],
       "type": "dynamic",
-      "label": "Cumulative active power"
+      "label": "Light Control: Cumulative active power"
     },
     {
       "value_type": "float",
@@ -86,16 +80,10 @@
           "value_type": "string",
           "static_value": "/3311/0/5820",
           "label": "oi"
-        },
-        {
-          "type": "meta",
-          "value_type": "string",
-          "static_value": null,
-          "label": "unit"
         }
       ],
       "type": "static",
-      "label": "Power Factor"
+      "label": "Light Control: Power Factor"
     },
     {
       "value_type": "string",
@@ -105,16 +93,10 @@
           "value_type": "string",
           "static_value": "/3311/0/5706",
           "label": "oi"
-        },
-        {
-          "type": "meta",
-          "value_type": "string",
-          "static_value": null,
-          "label": "unit"
         }
       ],
-      "type": "actuate",
-      "label": "Colour"
+      "type": "actuator",
+      "label": "Light Control: Colour"
     },
     {
       "value_type": "string",
@@ -125,16 +107,10 @@
           "value_type": "string",
           "static_value": "/3311/0/5701",
           "label": "oi"
-        },
-        {
-          "type": "meta",
-          "value_type": "string",
-          "static_value": null,
-          "label": "unit"
         }
       ],
       "type": "static",
-      "label": "Sensor Units"
+      "label": "Light Control: Sensor Units"
     }
   ],
   "label": "Light Control"

@@ -18,7 +18,7 @@
         }
       ],
       "type": "dynamic",
-      "label": "Sensor Value"
+      "label": "Temperature: Sensor Value"
     },
     {
       "value_type": "float",
@@ -38,7 +38,7 @@
         }
       ],
       "type": "static",
-      "label": "Min Measured Value"
+      "label": "Temperature: Min Measured Value"
     },
     {
       "value_type": "float",
@@ -58,7 +58,7 @@
         }
       ],
       "type": "static",
-      "label": "Max Measured Value"
+      "label": "Temperature: Max Measured Value"
     },
     {
       "value_type": "float",
@@ -78,7 +78,7 @@
         }
       ],
       "type": "static",
-      "label": "Min Range Value"
+      "label": "Temperature: Min Range Value"
     },
     {
       "value_type": "float",
@@ -98,7 +98,7 @@
         }
       ],
       "type": "static",
-      "label": "Max Range Value"
+      "label": "Temperature: Max Range Value"
     },
     {
       "value_type": "string",
@@ -109,16 +109,10 @@
           "value_type": "string",
           "static_value": "/3303/0/5701",
           "label": "oi"
-        },
-        {
-          "type": "meta",
-          "value_type": "string",
-          "static_value": null,
-          "label": "unit"
         }
       ],
       "type": "static",
-      "label": "Sensor Units"
+      "label": "Temperature: Sensor Units"
     },
     {
       "value_type": "string",
@@ -128,16 +122,10 @@
           "value_type": "string",
           "static_value": "/3303/0/5605",
           "label": "oi"
-        },
-        {
-          "type": "meta",
-          "value_type": "string",
-          "static_value": null,
-          "label": "unit"
         }
       ],
-      "type": null,
-      "label": "Reset Min and Max Measured Values"
+      "type": "actuator",
+      "label": "Temperature: Reset Min and Max Measured Values"
     }
   ],
   "label": "Temperature"

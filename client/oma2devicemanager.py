@@ -12,26 +12,28 @@ parser.add_option("-o", "--output", dest="output_file",
 
 
 def gettype(op):
-    if op == "RW":
-        return "actuate"
+    if op == "RW" or op == "E":
+        return "actuator"
     if op == "R":
         return "static"
 
-def getattr(item, object_id):
+def getattr(item, resource_id, resource_name):
     id = item.attrib['ID']
     label = item.findall("Name")[0].text
     op = item.findall("Operations")[0].text
     type = item.findall("Type")[0].text
     units = item.findall("Units")[0].text
     attr = {
-        "label": label,
+        "label": resource_name + ": " + label,
         "type" : gettype(op),
         "value_type": type.lower(),
         "metadata": [
-            {"label": "oi", "static_value": "/{}/0/{}".format(object_id, id), "type": "lwm2m", "value_type": "string"},
-            {"label": "unit", "static_value": units, "type": "meta", "value_type": "string" }
+            {"label": "oi", "static_value": "/{}/0/{}".format(resource_id, id), "type": "lwm2m", "value_type": "string"}
         ]
     }
+
+    if units is not None:
+        attr['metadata'].append({"label": "unit", "static_value": units, "type": "meta", "value_type": "string" })
 
     if attr["type"] == "static":
         attr["static_value"] = ""
@@ -43,12 +45,12 @@ def gettemplate(xml_tree):
     object = root.findall("Object")[0]
     object_id = object.findall("ObjectID")[0].text
     resources = object.findall("Resources")[0]
-    name = object.findall("Name")[0]
+    name = object.findall("Name")[0].text
     items = resources.findall("Item")
-    attrs = [getattr(item, object_id) for item in items]
+    attrs = [getattr(item, object_id, name) for item in items]
 
     template = {
-        "label": name.text,
+        "label": name,
         "attrs": attrs
     }
 
