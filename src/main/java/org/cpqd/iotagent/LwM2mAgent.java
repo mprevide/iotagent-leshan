@@ -50,8 +50,8 @@ public class LwM2mAgent {
 
 
         // Define model provider
-//            List<ObjectModel> models = ObjectLoader.loadDefault();
-        List<ObjectModel> models = new LinkedList<ObjectModel>();
+        List<ObjectModel> models = ObjectLoader.loadDefault();
+//        List<ObjectModel> models = new LinkedList<ObjectModel>();
 //            models.addAll(ObjectLoader.loadDdfResources("/models/", modelPaths));
         DinamicModelProvider dynamDinamicModelProvider = new DinamicModelProvider(models);
         modelProvider = dynamDinamicModelProvider;
@@ -148,9 +148,6 @@ public class LwM2mAgent {
     }
 
 
-
-
-
     public String actuate(String message) {
 
         message = "{'data': {'attrs': {'luminosity': 10.6}, 'id': 'f9b1'},\n" +
@@ -224,8 +221,6 @@ public class LwM2mAgent {
 
             // Define model provider
             builder.setObjectModelProvider(modelProvider);
-
-
 
 
             // Start Server
