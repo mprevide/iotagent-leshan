@@ -1,0 +1,144 @@
+{
+  "attrs": [
+    {
+      "value_type": "float",
+      "static_value": "",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3303/0/5700",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": "Defined by \u201cUnits\u201d resource.",
+          "label": "unit"
+        }
+      ],
+      "type": "dynamic",
+      "label": "Sensor Value"
+    },
+    {
+      "value_type": "float",
+      "static_value": "",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3303/0/5601",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": "Defined by \u201cUnits\u201d resource.",
+          "label": "unit"
+        }
+      ],
+      "type": "static",
+      "label": "Min Measured Value"
+    },
+    {
+      "value_type": "float",
+      "static_value": "",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3303/0/5602",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": "Defined by \u201cUnits\u201d resource.",
+          "label": "unit"
+        }
+      ],
+      "type": "static",
+      "label": "Max Measured Value"
+    },
+    {
+      "value_type": "float",
+      "static_value": "",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3303/0/5603",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": "Defined by \u201cUnits\u201d resource.",
+          "label": "unit"
+        }
+      ],
+      "type": "static",
+      "label": "Min Range Value"
+    },
+    {
+      "value_type": "float",
+      "static_value": "",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3303/0/5604",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": "Defined by \u201cUnits\u201d resource.",
+          "label": "unit"
+        }
+      ],
+      "type": "static",
+      "label": "Max Range Value"
+    },
+    {
+      "value_type": "string",
+      "static_value": "",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3303/0/5701",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": null,
+          "label": "unit"
+        }
+      ],
+      "type": "static",
+      "label": "Sensor Units"
+    },
+    {
+      "value_type": "string",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3303/0/5605",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": null,
+          "label": "unit"
+        }
+      ],
+      "type": null,
+      "label": "Reset Min and Max Measured Values"
+    }
+  ],
+  "label": "Temperature"
+}

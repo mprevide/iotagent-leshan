@@ -1,0 +1,141 @@
+{
+  "attrs": [
+    {
+      "value_type": "boolean",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3311/0/5850",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": null,
+          "label": "unit"
+        }
+      ],
+      "type": "actuate",
+      "label": "On/Off"
+    },
+    {
+      "value_type": "integer",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3311/0/5851",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": "%",
+          "label": "unit"
+        }
+      ],
+      "type": "actuate",
+      "label": "Dimmer"
+    },
+    {
+      "value_type": "integer",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3311/0/5852",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": "sec",
+          "label": "unit"
+        }
+      ],
+      "type": "actuate",
+      "label": "On Time"
+    },
+    {
+      "value_type": "float",
+      "static_value": "",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3311/0/5805",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": "Wh",
+          "label": "unit"
+        }
+      ],
+      "type": "dynamic",
+      "label": "Cumulative active power"
+    },
+    {
+      "value_type": "float",
+      "static_value": "",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3311/0/5820",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": null,
+          "label": "unit"
+        }
+      ],
+      "type": "static",
+      "label": "Power Factor"
+    },
+    {
+      "value_type": "string",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3311/0/5706",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": null,
+          "label": "unit"
+        }
+      ],
+      "type": "actuate",
+      "label": "Colour"
+    },
+    {
+      "value_type": "string",
+      "static_value": "",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "value_type": "string",
+          "static_value": "/3311/0/5701",
+          "label": "oi"
+        },
+        {
+          "type": "meta",
+          "value_type": "string",
+          "static_value": null,
+          "label": "unit"
+        }
+      ],
+      "type": "static",
+      "label": "Sensor Units"
+    }
+  ],
+  "label": "Light Control"
+}
