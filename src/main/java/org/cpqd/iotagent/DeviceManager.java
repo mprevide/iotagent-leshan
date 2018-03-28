@@ -187,7 +187,8 @@ public class DeviceManager {
             HttpResponse<JsonNode> response = Unirest.get(url).header("Authorization", "Bearer " + token).asJson();
             if (response.getStatus() >= 300) {
                 return;
-            }JsonNode r = response.getBody();
+            }
+            JsonNode r = response.getBody();
             JSONArray devices = r.getObject().getJSONArray("devices");
             if(devices.length() == 0){
                 return;

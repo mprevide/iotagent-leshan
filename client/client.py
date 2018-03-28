@@ -2,75 +2,61 @@
 
 from iotclient import IotClient
 from copy import deepcopy
+import json
+
+
+def load_template(filename):
+    with open(filename, "r") as f:
+        return json.load(f)
+
 
 iotc = IotClient()
 
 iotc.upload_image("example.hex", "ExampleFW", "1.0.1")
 
-template1 = {
-    "label": 'Template_1_0_0',
-    "attrs": [
-        {
-            "label": "fw_version",
-            "type": "static",
-            "value_type": "string",
-            "static_value": "1.0.0",
-            "metadata": [
-                {"label": "oi", "static_value": "/3/0/3", "type": "lwm2m", "value_type": "string"}
-            ]
-        },
-        {
-            "label": "device_type",
-            "type": "static",
-            "value_type": "string",
-            "static_value": "ExampleFW",
-            "metadata": [
-                {"label": "oi", "static_value": "/3/0/1", "type": "lwm2m", "value_type": "string"}
-            ]
-        },
-        {
-            "label": "serial_number",
-            "type": "static",
-            "value_type": "string",
-            "static_value": "123456789",
-            "metadata": [
-                {"label": "oi", "static_value": "/3/0/2", "type": "lwm2m", "value_type": "string"}
-            ]
-        },
-        {
-            "label": "luminosity",
-            "type": "actuator",
-            "value_type": "float",
-            "extra": {
-                "path": "5000/0/2"
-            }
-        }
+template1 = load_template("template1_0_0.json")
+template2 = load_template("template1_0_1.json")
+temp_sensor_template = load_template("3303.json")
+light_bulb_template = load_template("3311.json")
 
-    ]
-}
-
-template2 = deepcopy(template1)
-template2['label'] = 'Template_1_0_1'
-for attr in template2['attrs']:
-    if attr['label'] == 'fw_version':
-        attr['static_value'] = '1.0.1'
-
-template1_id = iotc.create_template(template1)
-template2_id = iotc.create_template(template2)
+template1_id = str(iotc.create_template(template1))
+template2_id = str(iotc.create_template(template2))
+temp_sensor_template_id = str(iotc.create_template(temp_sensor_template))
+light_bulb_template_id = str(iotc.create_template(light_bulb_template))
 
 device_payload = {
-    "templates": [str(template1_id)],
+    "templates": [template1_id],
     "label": "ExampleFW"
 }
 
 new_device_payload = {
-    "templates": [str(template2_id)],
+    "templates": [template2_id],
     "label": "ExampleFW"
 }
 
 device_id = iotc.create_device(device_payload)
 iotc.update_device(device_id, new_device_payload)
 
+new_device_payload = {
+    # "templates": [template1_id, temp_sensor_template_id, light_bulb_template_id],
+    "templates": [template1_id, temp_sensor_template_id, light_bulb_template_id],
+    "label": "ExampleFW"
+}
+
+
+temp_dict = {val['label']:val for val in temp_sensor_template['attrs']}
+light_dict = {val['label']:val for val in light_bulb_template['attrs']}
+
+temp_set = set(temp_dict)
+light_set = set(light_dict)
+
+
+
+
+for name in temp_set.intersection(light_set):
+    print(name, temp_dict[name])
+
+iotc.update_device(device_id, new_device_payload)
 # actuating_attr = {
 #         "luminosity": 10.6
 # }

@@ -13,7 +13,6 @@ public class DeviceAttribute {
     String label;
     String type;
     String valueType;
-    String dynamicValue;
     String staticValue;
 
     public DeviceAttribute(JsonElement json) {
@@ -21,7 +20,7 @@ public class DeviceAttribute {
         type = json.getAsJsonObject().get("type").getAsString();
         valueType = json.getAsJsonObject().get("value_type").getAsString();
         if (type.equals("dynamic")) {
-            dynamicValue = json.getAsJsonObject().get("dynamic_value").getAsString();
+            // dynamic does not have a value
         } else if (type.equals("actuator")) {
             // Actuator does not have a value
         } else {
@@ -53,6 +52,7 @@ public class DeviceAttribute {
     private ResourceModel.Type getTypeFor(String valueType) {
         switch (valueType) {
             case "bool":
+            case "boolean":
                 return ResourceModel.Type.BOOLEAN;
             case "string":
                 return ResourceModel.Type.STRING;
@@ -69,8 +69,10 @@ public class DeviceAttribute {
 
     private ResourceModel.Operations getOpsFor(String type) {
         switch (type) {
-            case "dynamic":
+            case "actuator":
                 return ResourceModel.Operations.RW;
+            case "dynamic":
+                return ResourceModel.Operations.R;
             case "static":
                 return ResourceModel.Operations.R;
             case "meta":

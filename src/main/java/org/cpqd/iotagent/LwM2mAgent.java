@@ -115,10 +115,11 @@ public class LwM2mAgent {
 
 
     public String update(String message) {
-        JSONObject data = new JSONObject(message);
+        JsonElement o = new JsonParser().parse(message);
+        deviceManager.RegisterModel(gson.toJsonTree(o));
 
         // Retrieve device id
-
+        JSONObject data = new JSONObject(message);
         String id = data.get("id").toString();
         Registration registration = deviceManager.getDeviceRegistration(id);
         if (registration == null) {
