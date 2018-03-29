@@ -27,7 +27,9 @@ public class KafkaConsumerLoop implements Runnable {
 
     private String TENANCY_MANAGER_SUBJECT = "dojot.tenancy";
     private String TENANCY_MANAGER_URL = "http://auth:5000";
-    private String DATA_BROKER_MANAGER = "http://localhost:80/topic/dojot.device-manager.device";
+    private String DATA_BROKER_DEVICE_ENDPOINT = "dojot.device-manager.device";
+    private String DATA_BROKER_DATA_ENDPOINT = "device-data";
+    private String DATA_BROKER_MANAGER = "http://localhost:80/topic/";
 
 
 
@@ -36,7 +38,7 @@ public class KafkaConsumerLoop implements Runnable {
                              List<String> topics) {
         this.id = id;
         this.topics = topics;
-        String adminTopic = GetTopic("admin");
+        String adminTopic = GetTopic("admin", DATA_BROKER_DEVICE_ENDPOINT);
         this.topics.add(adminTopic);
         Properties props = new Properties();
         props.put("bootstrap.servers", "localhost:9092");
@@ -48,10 +50,10 @@ public class KafkaConsumerLoop implements Runnable {
 
     }
 
-    private String GetTopic(String service) {
+    private String GetTopic(String service, String endpoint) {
         try {
             String token = TenancyManager.GetJwtToken(service);
-            HttpResponse<JsonNode> response = Unirest.get(DATA_BROKER_MANAGER)
+            HttpResponse<JsonNode> response = Unirest.get(DATA_BROKER_MANAGER + endpoint)
                     .header("Authorization", "Bearer " + token).asJson();
             return response.getBody().getObject().getString("topic");
         } catch (Exception e) {
