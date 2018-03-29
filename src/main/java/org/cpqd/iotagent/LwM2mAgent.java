@@ -1,6 +1,7 @@
 package org.cpqd.iotagent;
 
 
+import com.eclipsesource.json.Json;
 import com.google.gson.*;
 import com.mashape.unirest.http.*;
 
@@ -97,12 +98,18 @@ public class LwM2mAgent {
         String SerialNumber = requestHandler.ReadResource(registration, 3, 0, 2);
         System.out.println(DeviceModel + " / " + SerialNumber);
         String Lwm2mId = registration.getId();
-        deviceManager.RegisterDevice("admin", Lwm2mId, DeviceModel, SerialNumber, registration);
+        JsonElement deviceJson = deviceManager.GetDeviceFromDeviceManager("admin", DeviceModel, SerialNumber);
+        Device device = new Device(deviceJson);
+        deviceManager.RegisterDevice(device, "admin", Lwm2mId, DeviceModel, SerialNumber, registration);
 
 
         // TODO(jsiloto) Register listeners for dynamic data
-        requestHandler.ObserveResource(registration, 3311, 0, 5852);
-
+        for(DeviceAttribute attr: device.attributes){
+            if(attr.type.equals("dynamic")){
+                Integer[] path = attr.getLwm2mPath();
+                requestHandler.ObserveResource(registration, path[0], path[1], path[2]);
+            }
+        }
 
         // TODO(jsiloto): Is anything bellow this line useful?
         System.out.println("new device: " + registration.getEndpoint());
@@ -115,20 +122,19 @@ public class LwM2mAgent {
     // *********** Run Server *************** //
     public String create(String message) {
         JsonElement o = new JsonParser().parse(message);
-        deviceManager.RegisterModel(gson.toJsonTree(o));
-
-
+        Device device = new Device(o);
+        deviceManager.RegisterModel(device);
         return "OK\n";
     }
 
 
     public String update(String message) {
         JsonElement o = new JsonParser().parse(message);
-        deviceManager.RegisterModel(gson.toJsonTree(o));
+        Device device = new Device(o);
+        deviceManager.RegisterModel(device);
 
         // Retrieve device id
-        JSONObject data = new JSONObject(message);
-        String id = data.get("id").toString();
+        String id = device.deviceId;
         Registration registration = deviceManager.getDeviceRegistration(id);
         if (registration == null) {
             return "NOK\n";
@@ -139,8 +145,8 @@ public class LwM2mAgent {
 
 
         // Get device label and new FW Version
-        String newFwVersion = DeviceManager.getStaticValue("fw_version", data);
-        String deviceLabel = DeviceManager.getStaticValue("device_type", data);
+        String newFwVersion = device.getStaticValue("fw_version");
+        String deviceLabel = device.getStaticValue("device_type");
 
         // Get device current FW version
         String currentFwVersion = requestHandler.ReadResource(registration, 3, 0, 3);

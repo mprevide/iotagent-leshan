@@ -4,8 +4,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.leshan.core.model.ResourceModel;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,8 +16,10 @@ public class DeviceAttribute {
     String type;
     String valueType;
     String staticValue;
+    String path;
 
     public DeviceAttribute(JsonElement json) {
+        // Regular Attributes
         label = json.getAsJsonObject().get("label").getAsString();
         type = json.getAsJsonObject().get("type").getAsString();
         valueType = json.getAsJsonObject().get("value_type").getAsString();
@@ -26,6 +30,31 @@ public class DeviceAttribute {
         } else {
             staticValue = json.getAsJsonObject().get("static_value").getAsString();
         }
+
+        // Metadata
+        path = getLwm2mPath(json);
+    }
+
+    public boolean isLwm2mAttr(){
+        return (!path.isEmpty());
+    }
+
+
+    public Integer[] getLwm2mPath() {
+        if(path.isEmpty()){
+            return null;
+        }
+        String[] p = StringUtils.stripStart(path, "/").split("/");
+        Integer[] result = Arrays.stream(p).map(s -> Integer.valueOf(s)).toArray(Integer[]::new);
+        return result;
+    }
+
+    public ResourceModel getLwm2mResourceModel(){
+        Integer[] ids = getLwm2mPath();
+        if(ids == null){
+            return null;
+        }
+        return getLwm2mResourceModel(ids[2]);
     }
 
     public ResourceModel getLwm2mResourceModel(int num) {
@@ -33,7 +62,6 @@ public class DeviceAttribute {
                 getTypeFor(valueType), "", "", "");
         return model;
     }
-
 
     public static String getLwm2mPath(JsonElement json) {
         if (!json.getAsJsonObject().has("metadata")) {

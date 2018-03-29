@@ -64,118 +64,51 @@ public class DeviceManager {
     // TODO(jsiloto): Update Lwm2mModel
 
 
-
-    public void RegisterModel(JSONObject device) {
-        JsonParser jsonParser = new JsonParser();
-        JsonObject gsonDevice = (JsonObject)jsonParser.parse(device.toString());
-        RegisterModel(gsonDevice);
-    }
-
-    public void RegisterModel(JsonElement device) {
-
-
-        Map<Integer, LinkedList<ResourceModel>> newModels =  new HashMap<Integer, LinkedList<ResourceModel>>();
-        LinkedList<ResourceModel> resources;
-
-        String deviceLabel = device.getAsJsonObject().get("label").getAsString();
-
-
+    LinkedList<DeviceAttribute> getAttributes(JsonElement device) {
+        LinkedList<DeviceAttribute> attributes = new LinkedList<>();
         // Get all ResourceModels for each attribute
         JsonObject data = device.getAsJsonObject().get("attrs").getAsJsonObject();
         Set<Map.Entry<String, JsonElement>> entrySet = data.entrySet();
-        for(Map.Entry<String,JsonElement> entry : entrySet){
-            for(JsonElement attr: entry.getValue().getAsJsonArray()){
+        for (Map.Entry<String, JsonElement> entry : entrySet) {
+            for (JsonElement attr : entry.getValue().getAsJsonArray()) {
                 System.out.println(attr);
-                DeviceAttribute dev = new DeviceAttribute(attr);
-                String path = DeviceAttribute.getLwm2mPath(attr);
-                if(!path.isEmpty()){
-                    path = StringUtils.stripStart(path, "/");
-                    String[] ids = path.split("/");
-                    LinkedList<ResourceModel> r = newModels.get(Integer.valueOf(ids[0]));
-                    if(r == null){
-                        newModels.put(Integer.valueOf(ids[0]), new LinkedList<ResourceModel>());
-                    }
-                    newModels.get(Integer.valueOf(ids[0])).add(dev.getLwm2mResourceModel(Integer.valueOf(ids[2])));
+                attributes.add(new DeviceAttribute(attr));
+            }
+        }
+        return attributes;
+    }
+
+    public void RegisterModel(Device device) {
+        Map<Integer, LinkedList<ResourceModel>> newModels = new HashMap<Integer, LinkedList<ResourceModel>>();
+        LinkedList<ResourceModel> resources;
+
+        String deviceLabel = device.label;
+
+        // Get all ResourceModels for each attribute
+        for (DeviceAttribute attr : device.attributes) {
+            if (attr.isLwm2mAttr()) {
+                ResourceModel attrModel = attr.getLwm2mResourceModel();
+                int objectId = attr.getLwm2mPath()[0];
+                if (!newModels.containsKey(objectId)) {
+                    newModels.put(objectId, new LinkedList<ResourceModel>());
                 }
+                newModels.get(objectId).add(attr.getLwm2mResourceModel());
             }
         }
 
+        // TODO(jsiloto): Should models be updated everytime?
         // Iterate over discovered models, add if not already in the provider
-        for(Map.Entry<Integer, LinkedList<ResourceModel>> entry: newModels.entrySet()){
+        for (Map.Entry<Integer, LinkedList<ResourceModel>> entry : newModels.entrySet()) {
             int resourceId = entry.getKey();
             LwM2mModel model = modelProvider.getObjectModel(null);
             ObjectModel oldModel = model.getObjectModel(resourceId);
-            if(oldModel == null){
+            //TODO(jsiloto): Can't we just update the model with new attributes?
+            if (oldModel == null) {
                 ObjectModel objectModel = new ObjectModel(resourceId, deviceLabel,
                         "", "1", false, false, entry.getValue());
                 modelProvider.addObjectModel(objectModel);
             }
         }
-
-
-
-
-
-
-//            String template = (String) templates.next();
-//            JsonArray attr_list = data.get()
-
-
-
-
-
-
-
-
-//
-//
-//            JSONArray attr_list = data.getJSONArray(template);
-//            for (int i = 0; i < attr_list.length(); i++) {
-//                JSONObject attr = (JSONObject) attr_list.get(i);
-//
-//                // Check if attribute has Lwm2m path
-//                if(attr.has("metadata")){
-//
-//
-//
-//
-//                    if(attr.getJSONObject("metadata").has("path")){
-//                        String path = attr.getJSONObject("metadata").getString("path");
-//                        String[] ids = path.split("/");
-//
-//
-//                        //Check if object exists in modelprovider if not create
-//                        //Check if resource exists in model
-//                        //update model
-//                    }
-//                }
-//
-//
-//
-//                String resourceName = attr.getString("label");
-//                String valueType = attr.getString("value_type");
-//                String type = attr.getString("type");
-//                String path = "";
-//
-//
-//
-//
-//                attr = (JSONObject) attr_list.get(i);
-//                if (attr.getString("label").equals(resourceName)) {
-//                    String value = attr.getString("static_value");
-//                }
-//
-//                ResourceModel model = new ResourceModel(i, resourceName, ResourceModel.Operations.RW, false,
-//                        false, ResourceModel.Type.STRING, "", "", "");
-//
-//
-//            }
-//        }
-
-//        int newId = 5000;
-//        ObjectModel objectModel = new ObjectModel(newId, deviceLabel, "", false, false, );
-
-
     }
 
 
@@ -184,7 +117,7 @@ public class DeviceManager {
         this.modelProvider = modelProvider;
     }
 
-    public void RegisterDevice(String service, String lwm2mId, String deviceModel, String serialNumber, Registration registration) {
+    public JsonElement GetDeviceFromDeviceManager(String service, String deviceModel, String serialNumber) {
         String token = TenancyManager.GetJwtToken(service);
         String query = "?attr=device_type=" + deviceModel + "&serial_number=" + serialNumber;
         String url = this.deviceUrl + query;
@@ -192,23 +125,30 @@ public class DeviceManager {
         try {
             HttpResponse<JsonNode> response = Unirest.get(url).header("Authorization", "Bearer " + token).asJson();
             if (response.getStatus() >= 300) {
-                return;
+                return null;
             }
             JsonNode r = response.getBody();
             JSONArray devices = r.getObject().getJSONArray("devices");
-            if(devices.length() == 0){
-                return;
+            if (devices.length() == 0) {
+                return null;
             }
-            String id = devices.getJSONObject(0).get("id").toString();
-            RegisterModel(devices.getJSONObject(0));
+            JSONObject device = devices.getJSONObject(0);
+            JsonParser jsonParser = new JsonParser();
+            JsonObject gsonDevice = (JsonObject) jsonParser.parse(device.toString());
+            return gsonDevice;
 
-            Devices.put(id, registration);
-            Lwm2mDevices.put(lwm2mId, id);
-            System.out.println(id);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
         }
+        return null;
+    }
+
+    public void RegisterDevice(Device device, String service, String lwm2mId, String deviceModel, String serialNumber, Registration registration) {
+        RegisterModel(device);
+        Devices.put(device.deviceId, registration);
+        Lwm2mDevices.put(lwm2mId, device.deviceId);
+        System.out.println(device.deviceId);
     }
 
     public Registration getDeviceRegistration(String id) {
