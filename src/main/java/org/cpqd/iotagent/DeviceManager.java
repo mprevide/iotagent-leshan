@@ -1,8 +1,10 @@
 package org.cpqd.iotagent;
 
+import com.eclipsesource.json.Json;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -26,7 +28,6 @@ public class DeviceManager {
     private DinamicModelProvider modelProvider;
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
     private Map<String, String> Lwm2mDevices = new HashMap<String, String>();
-    int newResourceId = 5000;
 
     // Todo(jsiloto): This would be nicer as a JsonDeserializer for generic attributes
     public static String getStaticValue(String label, JSONObject data) {
@@ -64,6 +65,12 @@ public class DeviceManager {
 
 
 
+    public void RegisterModel(JSONObject device) {
+        JsonParser jsonParser = new JsonParser();
+        JsonObject gsonDevice = (JsonObject)jsonParser.parse(device.toString());
+        RegisterModel(gsonDevice);
+    }
+
     public void RegisterModel(JsonElement device) {
 
 
@@ -95,13 +102,12 @@ public class DeviceManager {
 
         // Iterate over discovered models, add if not already in the provider
         for(Map.Entry<Integer, LinkedList<ResourceModel>> entry: newModels.entrySet()){
-            int i = entry.getKey();
+            int resourceId = entry.getKey();
             LwM2mModel model = modelProvider.getObjectModel(null);
-            ObjectModel oldModel = model.getObjectModel(i);
+            ObjectModel oldModel = model.getObjectModel(resourceId);
             if(oldModel == null){
-                ObjectModel objectModel = new ObjectModel(newResourceId, deviceLabel,
+                ObjectModel objectModel = new ObjectModel(resourceId, deviceLabel,
                         "", "1", false, false, entry.getValue());
-                newResourceId ++;
                 modelProvider.addObjectModel(objectModel);
             }
         }
@@ -194,6 +200,8 @@ public class DeviceManager {
                 return;
             }
             String id = devices.getJSONObject(0).get("id").toString();
+            RegisterModel(devices.getJSONObject(0));
+
             Devices.put(id, registration);
             Lwm2mDevices.put(lwm2mId, id);
             System.out.println(id);

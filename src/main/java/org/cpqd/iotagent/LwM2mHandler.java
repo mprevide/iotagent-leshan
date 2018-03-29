@@ -9,8 +9,10 @@ In case of failure any request should fail silently
  */
 
 import com.google.gson.Gson;
+import org.eclipse.leshan.core.request.ObserveRequest;
 import org.eclipse.leshan.core.request.ReadRequest;
 import org.eclipse.leshan.core.request.WriteRequest;
+import org.eclipse.leshan.core.response.ObserveResponse;
 import org.eclipse.leshan.core.response.ReadResponse;
 import org.eclipse.leshan.core.response.WriteResponse;
 import org.eclipse.leshan.server.LwM2mServer;
@@ -43,6 +45,17 @@ public class LwM2mHandler {
         }
         return value;
     }
+
+    public void ObserveResource(Registration registration, int objectId, int objectInstanceId, int resourceId){
+        try {
+            ObserveResponse response = server.send(registration, new ObserveRequest(objectId, objectInstanceId, resourceId), readTimout);
+        } catch(Exception e){
+            // Todo(jsiloto): Log errors here
+            e.printStackTrace();
+            System.out.println(e);
+        }
+    }
+
 
     public void WriteResource(Registration registration, int objectId, int objectInstanceId, int resourceId, String value){
         try {

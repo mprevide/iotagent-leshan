@@ -13,16 +13,20 @@ import org.eclipse.leshan.core.model.ObjectModel;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
 import org.eclipse.leshan.core.node.codec.LwM2mNodeDecoder;
+import org.eclipse.leshan.core.request.ObserveRequest;
 import org.eclipse.leshan.core.request.WriteRequest;
+import org.eclipse.leshan.core.response.ObserveResponse;
 import org.eclipse.leshan.core.response.WriteResponse;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
 import org.eclipse.leshan.server.californium.impl.LeshanServer;
 import org.eclipse.leshan.server.model.LwM2mModelProvider;
 import org.eclipse.leshan.server.model.StaticModelProvider;
+import org.eclipse.leshan.server.observation.ObservationListener;
 import org.eclipse.leshan.server.registration.RegistrationListener;
 import org.eclipse.leshan.server.registration.Registration;
 import org.eclipse.leshan.server.registration.RegistrationUpdate;
 import org.eclipse.leshan.core.observation.Observation;
+import org.eclipse.leshan.server.observation.ObservationListener;
 import org.eclipse.leshan.core.node.LwM2mNode;
 
 
@@ -52,8 +56,9 @@ public class LwM2mAgent {
         // Define model provider
         List<ObjectModel> models = ObjectLoader.loadDefault();
 //        List<ObjectModel> models = new LinkedList<ObjectModel>();
-//            models.addAll(ObjectLoader.loadDdfResources("/models/", modelPaths));
+        models.addAll(ObjectLoader.loadDdfResources("/models/", modelPaths));
         DinamicModelProvider dynamDinamicModelProvider = new DinamicModelProvider(models);
+
         modelProvider = dynamDinamicModelProvider;
         imageDownloader = new ImageDownloader(imageManagerUrl);
         deviceManager = new DeviceManager(deviceManagerUrl, dynamDinamicModelProvider);
@@ -93,7 +98,10 @@ public class LwM2mAgent {
         System.out.println(DeviceModel + " / " + SerialNumber);
         String Lwm2mId = registration.getId();
         deviceManager.RegisterDevice("admin", Lwm2mId, DeviceModel, SerialNumber, registration);
+
+
         // TODO(jsiloto) Register listeners for dynamic data
+        requestHandler.ObserveResource(registration, 3311, 0, 5852);
 
 
         // TODO(jsiloto): Is anything bellow this line useful?
@@ -191,7 +199,7 @@ public class LwM2mAgent {
     }
 
 
-    RegistrationListener listener = new RegistrationListener() {
+    private final RegistrationListener registrationListener = new RegistrationListener() {
         public void registered(Registration registration, Registration previousReg,
                                Collection<Observation> previousObsersations) {
             registerNewDevice(registration);
@@ -209,6 +217,30 @@ public class LwM2mAgent {
             deviceManager.DeregisterDevice(registration.getId());
         }
     };
+
+    private final ObservationListener observationListener = new ObservationListener() {
+        @Override
+        public void cancelled(Observation observation) {
+        }
+
+        @Override
+        public void onResponse(Observation observation, Registration registration, ObserveResponse response) {
+            JsonElement element = gson.toJsonTree(response.getContent());
+            System.out.println("Received notification from [" + observation.getPath() + "] containing value:" + element);
+        }
+
+        @Override
+        public void onError(Observation observation, Registration registration, Exception error) {
+            System.out.println("Unable to handle notification of" + observation.getRegistrationId().toString() + ": " + observation.getPath());
+        }
+
+        @Override
+        public void newObservation(Observation observation, Registration registration) {
+        }
+    };
+
+
+
 
 
     public void run() {
@@ -229,7 +261,8 @@ public class LwM2mAgent {
             server.start();
 
             // Add Registration Treatment
-            server.getRegistrationService().addListener(listener);
+            server.getRegistrationService().addListener(registrationListener);
+            server.getObservationService().addListener(observationListener);
 
             // Initialize Request Handler
             requestHandler = new LwM2mHandler(server, gson);
