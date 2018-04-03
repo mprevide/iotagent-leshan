@@ -1,6 +1,8 @@
 package org.cpqd.iotagent;
 
 import com.eclipsesource.json.Json;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,8 +28,13 @@ public class DeviceManager {
 
     private String deviceUrl;
     private DinamicModelProvider modelProvider;
+    private Map<String, String> paths = new HashMap<>();
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
     private Map<String, String> Lwm2mDevices = new HashMap<String, String>();
+
+//    BiMap<String, String> Lwm2mDevices = HashBiMap.create();
+
+
 
     // Todo(jsiloto): This would be nicer as a JsonDeserializer for generic attributes
     public static String getStaticValue(String label, JSONObject data) {
@@ -90,6 +97,7 @@ public class DeviceManager {
                 ResourceModel attrModel = attr.getLwm2mResourceModel();
                 int objectId = attr.getLwm2mPath()[0];
                 if (!newModels.containsKey(objectId)) {
+                    paths.put(attr.path, attr.label);
                     newModels.put(objectId, new LinkedList<ResourceModel>());
                 }
                 newModels.get(objectId).add(attr.getLwm2mResourceModel());
@@ -159,10 +167,23 @@ public class DeviceManager {
         return Devices.get(Lwm2mDevices.get(id));
     }
 
+    public String getDeviceId(String lwm2mId){
+        return Lwm2mDevices.get(lwm2mId);
+    }
+
     public void DeregisterDevice(String lwm2mId) {
         String deviceId = Lwm2mDevices.get(lwm2mId);
         Devices.remove(deviceId);
         Lwm2mDevices.remove(lwm2mId);
+    }
+
+    public String getLabelFromPath(String path){
+        Integer[] ids = DeviceAttribute.getIdsfromPath(path);
+        if(ids == null){
+            return "";
+        }
+        return modelProvider.getObjectModel(null).getResourceModel(ids[0], ids[2]).name;
+
     }
 
 

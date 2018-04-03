@@ -44,10 +44,15 @@ public class DeviceAttribute {
         if(path.isEmpty()){
             return null;
         }
+        return getIdsfromPath(path);
+    }
+
+    public static Integer[] getIdsfromPath(String path){
         String[] p = StringUtils.stripStart(path, "/").split("/");
         Integer[] result = Arrays.stream(p).map(s -> Integer.valueOf(s)).toArray(Integer[]::new);
         return result;
     }
+
 
     public ResourceModel getLwm2mResourceModel(){
         Integer[] ids = getLwm2mPath();

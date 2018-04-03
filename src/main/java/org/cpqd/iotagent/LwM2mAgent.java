@@ -2,12 +2,15 @@ package org.cpqd.iotagent;
 
 
 import com.eclipsesource.json.Json;
+import com.google.gson.JsonElement;
 import com.google.gson.*;
 import com.mashape.unirest.http.*;
 
 import java.net.HttpURLConnection;
 import java.util.*;
 
+import org.apache.http.annotation.Obsolete;
+import org.cpqd.iotagent.kafka.KafkaHandler;
 import org.eclipse.leshan.core.model.LwM2mModel;
 import org.eclipse.leshan.core.model.ObjectLoader;
 import org.eclipse.leshan.core.model.ObjectModel;
@@ -34,7 +37,7 @@ import org.eclipse.leshan.core.node.LwM2mNode;
 import org.json.JSONObject;
 
 
-public class LwM2mAgent {
+public class LwM2mAgent implements Runnable{
 
     private String imageManagerUrl;
     private String deviceManagerUrl;
@@ -47,23 +50,23 @@ public class LwM2mAgent {
 
     private static HttpURLConnection con;
     private final static String[] modelPaths = new String[]{"5000.xml"};
+    private KafkaHandler kafkaHandler;
 
-    LwM2mAgent(String deviceManagerUrl, String imageManagerUrl) {
+    LwM2mAgent(KafkaHandler kafkaHandler, String deviceManagerUrl, String imageManagerUrl)  {
         this.deviceManagerUrl = deviceManagerUrl;
         this.imageManagerUrl = imageManagerUrl;
         this.gson = gson = createGson();
+        this.kafkaHandler = kafkaHandler;
 
 
         // Define model provider
         List<ObjectModel> models = ObjectLoader.loadDefault();
-//        List<ObjectModel> models = new LinkedList<ObjectModel>();
         models.addAll(ObjectLoader.loadDdfResources("/models/", modelPaths));
         DinamicModelProvider dynamDinamicModelProvider = new DinamicModelProvider(models);
 
         modelProvider = dynamDinamicModelProvider;
         imageDownloader = new ImageDownloader(imageManagerUrl);
         deviceManager = new DeviceManager(deviceManagerUrl, dynamDinamicModelProvider);
-
     }
 
     // *********** Instance Initialization *************** //
@@ -233,6 +236,11 @@ public class LwM2mAgent {
         public void onResponse(Observation observation, Registration registration, ObserveResponse response) {
             JsonElement element = gson.toJsonTree(response.getContent());
             System.out.println("Received notification from [" + observation.getPath() + "] containing value:" + element);
+            JsonObject attrs = new JsonObject();
+            String label = deviceManager.getLabelFromPath(observation.getPath().toString());
+            attrs.add(label, element.getAsJsonObject().get("value"));
+            String deviceId = deviceManager.getDeviceId(observation.getRegistrationId());
+            kafkaHandler.UpdateAttr("admin", deviceId, attrs);
         }
 
         @Override
@@ -248,7 +256,7 @@ public class LwM2mAgent {
 
 
 
-
+    @Override
     public void run() {
         try {
             LeshanServerBuilder builder = new LeshanServerBuilder();
