@@ -13,24 +13,24 @@ public class Device {
     String deviceId;
     public LinkedList<DeviceAttribute> attributes;
 
-    public Device(JsonElement device){
+    public Device(JsonElement device) {
         label = device.getAsJsonObject().get("label").getAsString();
         deviceId = device.getAsJsonObject().get("id").getAsString();
         attributes = new LinkedList<>();
         // Get all ResourceModels for each attribute
         JsonObject data = device.getAsJsonObject().get("attrs").getAsJsonObject();
         Set<Map.Entry<String, JsonElement>> entrySet = data.entrySet();
-        for(Map.Entry<String,JsonElement> entry : entrySet){
-            for(JsonElement attr: entry.getValue().getAsJsonArray()){
+        for (Map.Entry<String, JsonElement> entry : entrySet) {
+            for (JsonElement attr : entry.getValue().getAsJsonArray()) {
                 System.out.println(attr);
                 attributes.add(new DeviceAttribute(attr));
             }
         }
     }
 
-    public String getStaticValue(String label){
-        for(DeviceAttribute attr: attributes){
-            if(attr.label.equals(label)){
+    public String getStaticValue(String label) {
+        for (DeviceAttribute attr : attributes) {
+            if (attr.label.equals(label)) {
                 return attr.staticValue;
             }
         }

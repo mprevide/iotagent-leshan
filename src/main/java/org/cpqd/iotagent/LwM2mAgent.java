@@ -1,7 +1,6 @@
 package org.cpqd.iotagent;
 
 
-import com.eclipsesource.json.Json;
 import com.google.gson.JsonElement;
 import com.google.gson.*;
 import com.mashape.unirest.http.*;
@@ -9,7 +8,6 @@ import com.mashape.unirest.http.*;
 import java.net.HttpURLConnection;
 import java.util.*;
 
-import org.apache.http.annotation.Obsolete;
 import org.cpqd.iotagent.kafka.KafkaHandler;
 import org.eclipse.leshan.core.model.LwM2mModel;
 import org.eclipse.leshan.core.model.ObjectLoader;
@@ -17,30 +15,26 @@ import org.eclipse.leshan.core.model.ObjectModel;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
 import org.eclipse.leshan.core.node.codec.LwM2mNodeDecoder;
-import org.eclipse.leshan.core.request.ObserveRequest;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.core.response.ObserveResponse;
 import org.eclipse.leshan.core.response.WriteResponse;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
 import org.eclipse.leshan.server.californium.impl.LeshanServer;
 import org.eclipse.leshan.server.model.LwM2mModelProvider;
-import org.eclipse.leshan.server.model.StaticModelProvider;
 import org.eclipse.leshan.server.observation.ObservationListener;
 import org.eclipse.leshan.server.registration.RegistrationListener;
 import org.eclipse.leshan.server.registration.Registration;
 import org.eclipse.leshan.server.registration.RegistrationUpdate;
 import org.eclipse.leshan.core.observation.Observation;
-import org.eclipse.leshan.server.observation.ObservationListener;
 import org.eclipse.leshan.core.node.LwM2mNode;
-
-
 import org.json.JSONObject;
 
 
-public class LwM2mAgent implements Runnable{
+// TODO(jsiloto) Add decent logging system
+
+public class LwM2mAgent implements Runnable {
 
     private String imageManagerUrl;
-    private String deviceManagerUrl;
     private ImageDownloader imageDownloader;
     private DeviceManager deviceManager;
     private LwM2mHandler requestHandler;
@@ -52,10 +46,11 @@ public class LwM2mAgent implements Runnable{
     private final static String[] modelPaths = new String[]{"5000.xml"};
     private KafkaHandler kafkaHandler;
 
-    LwM2mAgent(KafkaHandler kafkaHandler, String deviceManagerUrl, String imageManagerUrl)  {
-        this.deviceManagerUrl = deviceManagerUrl;
+
+    // *********** Instance Initialization *************** //
+    LwM2mAgent(KafkaHandler kafkaHandler, String deviceManagerUrl, String imageManagerUrl) {
         this.imageManagerUrl = imageManagerUrl;
-        this.gson = gson = createGson();
+        this.gson = createGson();
         this.kafkaHandler = kafkaHandler;
 
 
@@ -69,7 +64,7 @@ public class LwM2mAgent implements Runnable{
         deviceManager = new DeviceManager(deviceManagerUrl, dynamDinamicModelProvider);
     }
 
-    // *********** Instance Initialization *************** //
+
     private static Gson createGson() {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeHierarchyAdapter(LwM2mNode.class, new LwM2mNodeSerializer());
@@ -91,7 +86,6 @@ public class LwM2mAgent implements Runnable{
     }
 
     // ********* Methods ****************** //
-
     private void registerNewDevice(Registration registration) {
 
         //Get ID
@@ -106,15 +100,15 @@ public class LwM2mAgent implements Runnable{
         deviceManager.RegisterDevice(device, "admin", Lwm2mId, DeviceModel, SerialNumber, registration);
 
 
-        // TODO(jsiloto) Register listeners for dynamic data
-        for(DeviceAttribute attr: device.attributes){
-            if(attr.type.equals("dynamic")){
+        // Register listeners for dynamic data
+        for (DeviceAttribute attr : device.attributes) {
+            if (attr.type.equals("dynamic")) {
                 Integer[] path = attr.getLwm2mPath();
                 requestHandler.ObserveResource(registration, path[0], path[1], path[2]);
             }
         }
 
-        // TODO(jsiloto): Is anything bellow this line useful?
+        // TODO(jsiloto): This should go into a loggin system
         System.out.println("new device: " + registration.getEndpoint());
         for (int i = 0; i < registration.getObjectLinks().length; i++) {
             System.out.println(registration.getObjectLinks()[i]);
@@ -143,7 +137,6 @@ public class LwM2mAgent implements Runnable{
             return "NOK\n";
         }
 
-
         System.out.println(registration);
 
 
@@ -156,9 +149,7 @@ public class LwM2mAgent implements Runnable{
 
         // If Version has changed Update
         if (!currentFwVersion.equals(newFwVersion)) {
-            String imageID = imageDownloader.FetchImage("admin", deviceLabel, newFwVersion);
-            String fileserverUrl = "coap://[2001:db8::2]:5693/data/";
-            String fileUrl = fileserverUrl + imageID + ".hex";
+            String fileUrl = imageDownloader.ImageUrl("admin", deviceLabel, newFwVersion);
             requestHandler.WriteResource(registration, 5, 0, 1, fileUrl);
         }
 
@@ -173,6 +164,7 @@ public class LwM2mAgent implements Runnable{
                 " 'meta': {'service': 'admin'}}";
 
         JsonNode act = new JsonNode(message);
+        // TODO(jsiloto) use only Gson instead of org.json
         JSONObject data = act.getObject().getJSONObject("data");
         String id = data.getString("id");
         Registration registration = deviceManager.getDeviceRegistration(id);
@@ -252,8 +244,6 @@ public class LwM2mAgent implements Runnable{
         public void newObservation(Observation observation, Registration registration) {
         }
     };
-
-
 
 
     @Override

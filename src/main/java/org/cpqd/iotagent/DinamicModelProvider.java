@@ -10,6 +10,7 @@ import java.util.LinkedList;
 
 /**
  * A LwM2mModelProvider which uses only one model for all registered clients and allow new ObjectModels
+ * This is a modification of StaticModelProvider that allows update to the LwM2mModel
  */
 public class DinamicModelProvider implements LwM2mModelProvider {
     private LwM2mModel model;
@@ -22,7 +23,7 @@ public class DinamicModelProvider implements LwM2mModelProvider {
         this.model = model;
     }
 
-    public void addObjectModel(ObjectModel objectModel ){
+    public void addObjectModel(ObjectModel objectModel) {
         LinkedList<ObjectModel> models = new LinkedList<ObjectModel>(model.getObjectModels());
         models.add(objectModel);
         this.model = new LwM2mModel(models);
@@ -33,7 +34,6 @@ public class DinamicModelProvider implements LwM2mModelProvider {
         // same model for all clients
         return model;
     }
-
 
 
 }

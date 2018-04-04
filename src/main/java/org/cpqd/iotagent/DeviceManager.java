@@ -1,28 +1,24 @@
 package org.cpqd.iotagent;
 
-import com.eclipsesource.json.Json;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
-import org.eclipse.leshan.Link;
-import org.eclipse.leshan.LwM2mId;
 import org.eclipse.leshan.core.model.LwM2mModel;
 import org.eclipse.leshan.core.model.ObjectModel;
 import org.eclipse.leshan.core.model.ResourceModel;
 import org.eclipse.leshan.server.registration.Registration;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.apache.commons.lang3.StringUtils;
 
-import java.awt.*;
-import java.io.File;
+
 import java.util.*;
+
+/**
+ * This class is responsible for managing any data related to the device-manager microservice
+ */
 
 public class DeviceManager {
 
@@ -32,58 +28,11 @@ public class DeviceManager {
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
     private Map<String, String> Lwm2mDevices = new HashMap<String, String>();
 
-//    BiMap<String, String> Lwm2mDevices = HashBiMap.create();
-
-
-
-    // Todo(jsiloto): This would be nicer as a JsonDeserializer for generic attributes
-    public static String getStaticValue(String label, JSONObject data) {
-        // Get device label and new FW Version
-        String value = "";
-        data = data.getJSONObject("attrs");
-        Iterator<?> templates = data.keys();
-        while (templates.hasNext()) {
-            String template = (String) templates.next();
-            JSONArray attrs = data.getJSONArray(template);
-            for (int i = 0; i < attrs.length(); i++) {
-                JSONObject attr = (JSONObject) attrs.get(i);
-                if (attr.getString("label").equals(label)) {
-                    value = attr.getString("static_value");
-                }
-            }
-        }
-        return value;
+    public DeviceManager(String deviceManagerUrl, DinamicModelProvider modelProvider) {
+        this.deviceUrl = deviceManagerUrl + "/device";
+        this.modelProvider = modelProvider;
     }
 
-
-    // TODO(jsiloto): Isolate attribute
-
-    // TODO(jsiloto): Check if attribute has metadata
-
-    // TODO(jsiloto): Check if attribute has lwm2m metadata
-
-    // TODO(jsiloto): Parse path
-
-    // TODO(jsiloto): Check if Object exists
-
-    // TODO(jsiloto): If doesn't exist deserialize object into resources
-
-    // TODO(jsiloto): Update Lwm2mModel
-
-
-    LinkedList<DeviceAttribute> getAttributes(JsonElement device) {
-        LinkedList<DeviceAttribute> attributes = new LinkedList<>();
-        // Get all ResourceModels for each attribute
-        JsonObject data = device.getAsJsonObject().get("attrs").getAsJsonObject();
-        Set<Map.Entry<String, JsonElement>> entrySet = data.entrySet();
-        for (Map.Entry<String, JsonElement> entry : entrySet) {
-            for (JsonElement attr : entry.getValue().getAsJsonArray()) {
-                System.out.println(attr);
-                attributes.add(new DeviceAttribute(attr));
-            }
-        }
-        return attributes;
-    }
 
     public void RegisterModel(Device device) {
         Map<Integer, LinkedList<ResourceModel>> newModels = new HashMap<Integer, LinkedList<ResourceModel>>();
@@ -120,11 +69,9 @@ public class DeviceManager {
     }
 
 
-    public DeviceManager(String deviceManagerUrl, DinamicModelProvider modelProvider) {
-        this.deviceUrl = deviceManagerUrl + "/device";
-        this.modelProvider = modelProvider;
-    }
-
+    /**
+     * Retrieves device data from device-manager based on the serial number, if no device is found returns null
+     */
     public JsonElement GetDeviceFromDeviceManager(String service, String deviceModel, String serialNumber) {
         String token = TenancyManager.GetJwtToken(service);
         String query = "?attr=device_type=" + deviceModel + "&serial_number=" + serialNumber;
@@ -167,7 +114,7 @@ public class DeviceManager {
         return Devices.get(Lwm2mDevices.get(id));
     }
 
-    public String getDeviceId(String lwm2mId){
+    public String getDeviceId(String lwm2mId) {
         return Lwm2mDevices.get(lwm2mId);
     }
 
@@ -177,9 +124,9 @@ public class DeviceManager {
         Lwm2mDevices.remove(lwm2mId);
     }
 
-    public String getLabelFromPath(String path){
+    public String getLabelFromPath(String path) {
         Integer[] ids = DeviceAttribute.getIdsfromPath(path);
-        if(ids == null){
+        if (ids == null) {
             return "";
         }
         return modelProvider.getObjectModel(null).getResourceModel(ids[0], ids[2]).name;

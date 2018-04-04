@@ -1,26 +1,18 @@
 package org.cpqd.iotagent;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
-import com.eclipsesource.json.Json;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.omg.CosNaming.NamingContextPackage.NotFound;
 
-import java.awt.*;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.*;
-import java.util.Date;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
+
+/**
+ * This class abstracts everything related to the image-manager, it should have no knowledge of anything LWM2M related
+ */
 
 public class ImageDownloader {
 
@@ -28,14 +20,21 @@ public class ImageDownloader {
 
     public ImageDownloader(String imageManagerUrl) {
         this.imageUrl = imageManagerUrl + "/image/";
-        try{
+        try {
             Path path = FileSystems.getDefault().getPath("./fw/");
-            if(!Files.exists(path)){
+            if (!Files.exists(path)) {
                 Files.createDirectory(path);
             }
+        } catch (Exception e) {
         }
-        catch(Exception e){
-        }
+    }
+
+    public String ImageUrl(String service, String deviceLabel, String version) {
+        // TODO(jsiloto): Sanity check and return empty
+        String imageID = FetchImage("admin", deviceLabel, version);
+        String fileserverUrl = "coap://[2001:db8::2]:5693/data/";
+        String fileUrl = fileserverUrl + imageID + ".hex";
+        return fileUrl;
     }
 
     public String FetchImage(String service, String deviceLabel, String version) {
@@ -53,12 +52,12 @@ public class ImageDownloader {
 
             JsonNode imageList = response.getBody();
             JSONArray images = imageList.getArray();
-            for(int i =0; i<images.length(); i++){
+            for (int i = 0; i < images.length(); i++) {
                 JSONObject image = images.getJSONObject(i);
                 String d = image.getString("label");
                 String f = image.getString("fw_version");
                 Boolean haveBinary = image.getBoolean("confirmed");
-                if(d.equals(deviceLabel) && f.equals(version) && haveBinary){
+                if (d.equals(deviceLabel) && f.equals(version) && haveBinary) {
                     return image.getString("id");
                 }
             }
@@ -78,8 +77,8 @@ public class ImageDownloader {
                     .asBinary();
 
             InputStream in = fwInStream.getBody();
-            Path path = FileSystems.getDefault().getPath("./fw/"+imageId+".hex");
-            if(!Files.exists(path)){
+            Path path = FileSystems.getDefault().getPath("./fw/" + imageId + ".hex");
+            if (!Files.exists(path)) {
                 Files.createFile(path);
             }
             Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
@@ -88,8 +87,6 @@ public class ImageDownloader {
             System.out.println(e);
         }
     }
-
-
 
 
 }

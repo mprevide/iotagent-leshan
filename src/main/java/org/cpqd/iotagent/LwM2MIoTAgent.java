@@ -3,7 +3,6 @@ import org.cpqd.iotagent.kafka.KafkaHandler;
 
 public class LwM2MIoTAgent {
 
-
     public static void main(String[] args) {
 
         String imageManagerUrl = "http://localhost:5000";
@@ -21,7 +20,6 @@ public class LwM2MIoTAgent {
         // Run Handlers
         (new Thread(kafkaHandler)).start();
         (new Thread(agent)).start();
-
 
     }
 

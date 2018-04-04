@@ -2,15 +2,14 @@ package org.cpqd.iotagent;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.leshan.core.model.ResourceModel;
-
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
+/*
+  This class represents a generic attribute.
+  It should be used as intermediary object when converting between device-manager and Lwm2m models
+ */
 public class DeviceAttribute {
     String label;
     String type;
@@ -35,28 +34,28 @@ public class DeviceAttribute {
         path = getLwm2mPath(json);
     }
 
-    public boolean isLwm2mAttr(){
+    public boolean isLwm2mAttr() {
         return (!path.isEmpty());
     }
 
 
     public Integer[] getLwm2mPath() {
-        if(path.isEmpty()){
+        if (path.isEmpty()) {
             return null;
         }
         return getIdsfromPath(path);
     }
 
-    public static Integer[] getIdsfromPath(String path){
+    public static Integer[] getIdsfromPath(String path) {
         String[] p = StringUtils.stripStart(path, "/").split("/");
         Integer[] result = Arrays.stream(p).map(s -> Integer.valueOf(s)).toArray(Integer[]::new);
         return result;
     }
 
 
-    public ResourceModel getLwm2mResourceModel(){
+    public ResourceModel getLwm2mResourceModel() {
         Integer[] ids = getLwm2mPath();
-        if(ids == null){
+        if (ids == null) {
             return null;
         }
         return getLwm2mResourceModel(ids[2]);

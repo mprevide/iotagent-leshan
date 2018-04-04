@@ -1,11 +1,11 @@
 package org.cpqd.iotagent;
 
 
-/*
-This helper class encapsulate all requests to devices.
-Any device registration is expected to be active and working
-Checking if registrations are active is not this class responsibility
-In case of failure any request should fail silently
+/**
+ * This helper class encapsulate all requests to devices.
+ * Any device registration is expected to be active and working
+ * Checking if registrations are active is not this class responsibility
+ * In case of failure any request should fail silently
  */
 
 import com.google.gson.Gson;
@@ -24,21 +24,20 @@ public class LwM2mHandler {
     private LwM2mServer server;
     private long readTimout;
     private long writeTimeout;
-    public LwM2mHandler(LwM2mServer server, Gson gson){
+
+    public LwM2mHandler(LwM2mServer server, Gson gson) {
         this.readTimout = 5000;
         this.writeTimeout = 5000;
-
         this.server = server;
         this.gson = gson;
     }
 
-    // TODO(jsiloto) Use generics
-    public String ReadResource(Registration registration, int objectId, int objectInstanceId, int resourceId){
-        String value= "";
+    public String ReadResource(Registration registration, int objectId, int objectInstanceId, int resourceId) {
+        String value = "";
         try {
             ReadResponse response = server.send(registration, new ReadRequest(objectId, objectInstanceId, resourceId), readTimout);
             value = gson.toJsonTree(response.getContent()).getAsJsonObject().get("value").toString().replaceAll("^\"|\"$", "");
-        } catch(Exception e){
+        } catch (Exception e) {
             // Todo(jsiloto): Log errors here
             e.printStackTrace();
             System.out.println(e);
@@ -46,10 +45,10 @@ public class LwM2mHandler {
         return value;
     }
 
-    public void ObserveResource(Registration registration, int objectId, int objectInstanceId, int resourceId){
+    public void ObserveResource(Registration registration, int objectId, int objectInstanceId, int resourceId) {
         try {
             ObserveResponse response = server.send(registration, new ObserveRequest(objectId, objectInstanceId, resourceId), readTimout);
-        } catch(Exception e){
+        } catch (Exception e) {
             // Todo(jsiloto): Log errors here
             e.printStackTrace();
             System.out.println(e);
@@ -57,10 +56,10 @@ public class LwM2mHandler {
     }
 
 
-    public void WriteResource(Registration registration, int objectId, int objectInstanceId, int resourceId, String value){
+    public void WriteResource(Registration registration, int objectId, int objectInstanceId, int resourceId, String value) {
         try {
             WriteResponse response = server.send(registration, new WriteRequest(objectId, objectInstanceId, resourceId, value), writeTimeout);
-        } catch(Exception e){
+        } catch (Exception e) {
             // Todo(jsiloto): Log errors here
             e.printStackTrace();
             System.out.println(e);
