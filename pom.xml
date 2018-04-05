@@ -107,9 +107,9 @@
             <version>1.0.1</version>
         </dependency>
         <dependency>
-            <groupId>com.github.tprimini</groupId>
+            <groupId>com.github.dojot</groupId>
             <artifactId>iotagent-java</artifactId>
-            <version>d247b5d</version>
+            <version>master</version>
         </dependency>
     </dependencies>
 
