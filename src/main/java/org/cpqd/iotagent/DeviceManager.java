@@ -3,6 +3,7 @@ package org.cpqd.iotagent;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
+import org.apache.log4j.Logger;
 import org.eclipse.leshan.LwM2mId;
 import org.eclipse.leshan.server.registration.Registration;
 import org.json.JSONArray;
@@ -13,6 +14,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class DeviceManager {
+    private Logger mLogger = Logger.getLogger(DeviceManager.class);
 
     private String deviceUrl;
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
@@ -56,10 +58,10 @@ public class DeviceManager {
             String id = r.getObject().getJSONArray("devices").getJSONObject(0).get("id").toString();
             Devices.put(id, registration);
             Lwm2mDevices.put(lwm2mId, id);
-            System.out.println(id);
+            mLogger.debug(id);
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(e);
+            mLogger.error(e);
         }
     }
 

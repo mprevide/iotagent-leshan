@@ -53,15 +53,17 @@
         </plugins>
     </build>
 
-
-
-
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
-
 
     <dependencies>
         <dependency>
@@ -69,48 +71,46 @@
             <artifactId>java-jwt</artifactId>
             <version>3.3.0</version>
         </dependency>
-
         <dependency>
             <groupId>com.mashape.unirest</groupId>
             <artifactId>unirest-java</artifactId>
             <version>1.4.9</version>
         </dependency>
-
         <dependency>
             <groupId>org.eclipse.leshan</groupId>
             <artifactId>leshan-server-cf</artifactId>
             <version>1.0.0-M5</version>
         </dependency>
-        <!-- add any slf4j backend, here we use one of the smallest one: slf4j-simple -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>1.7.10</version>
-            <scope>runtime</scope>
+            <version>1.7.25</version>
         </dependency>
-
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.2.4</version>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/com.sparkjava/spark-core -->
         <dependency>
             <groupId>com.sparkjava</groupId>
             <artifactId>spark-core</artifactId>
             <version>2.5</version>
         </dependency>
-
-
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>1.0.1</version>
         </dependency>
-
-
+        <dependency>
+            <groupId>com.github.tprimini</groupId>
+            <artifactId>iotagent-java</artifactId>
+            <version>d247b5d</version>
+        </dependency>
     </dependencies>
-
 
 </project>

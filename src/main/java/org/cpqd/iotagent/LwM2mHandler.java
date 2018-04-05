@@ -9,6 +9,7 @@ In case of failure any request should fail silently
  */
 
 import com.google.gson.Gson;
+import org.apache.log4j.Logger;
 import org.eclipse.leshan.core.request.ReadRequest;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.core.response.ReadResponse;
@@ -17,6 +18,7 @@ import org.eclipse.leshan.server.LwM2mServer;
 import org.eclipse.leshan.server.registration.Registration;
 
 public class LwM2mHandler {
+    private Logger mLogger = Logger.getLogger(LwM2mHandler.class);
 
     private Gson gson;
     private LwM2mServer server;
@@ -39,7 +41,7 @@ public class LwM2mHandler {
         } catch(Exception e){
             // Todo(jsiloto): Log errors here
             e.printStackTrace();
-            System.out.println(e);
+            mLogger.error(e);
         }
         return value;
     }
@@ -50,7 +52,7 @@ public class LwM2mHandler {
         } catch(Exception e){
             // Todo(jsiloto): Log errors here
             e.printStackTrace();
-            System.out.println(e);
+            mLogger.error(e);
         }
     }
 

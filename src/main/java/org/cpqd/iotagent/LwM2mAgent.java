@@ -1,12 +1,11 @@
 package org.cpqd.iotagent;
 
-
-import com.google.gson.*;
-import com.mashape.unirest.http.*;
-
 import java.net.HttpURLConnection;
 import java.util.*;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.apache.log4j.Logger;
 import org.eclipse.leshan.core.model.LwM2mModel;
 import org.eclipse.leshan.core.model.ObjectLoader;
 import org.eclipse.leshan.core.model.ObjectModel;
@@ -25,11 +24,11 @@ import org.eclipse.leshan.server.registration.RegistrationUpdate;
 import org.eclipse.leshan.core.observation.Observation;
 import org.eclipse.leshan.core.node.LwM2mNode;
 
-
 import org.json.JSONObject;
 
 
 public class LwM2mAgent {
+    private Logger mLogger = Logger.getLogger(LwM2mAgent.class);
 
     private String imageManagerUrl;
     private String deviceManagerUrl;
@@ -81,39 +80,46 @@ public class LwM2mAgent {
         // Check device manager if device exists, if not drop
         String DeviceModel = requestHandler.ReadResource(registration, 3, 0, 1);
         String SerialNumber = requestHandler.ReadResource(registration, 3, 0, 2);
-        System.out.println(DeviceModel + " / " + SerialNumber);
+        mLogger.debug(DeviceModel + " / " + SerialNumber);
         String Lwm2mId = registration.getId();
         deviceManager.RegisterDevice("admin", Lwm2mId, DeviceModel, SerialNumber, registration);
         // TODO(jsiloto) Register listeners for dynamic data
 
 
         // TODO(jsiloto): Is anything bellow this line useful?
-        System.out.println("new device: " + registration.getEndpoint());
+        mLogger.debug("new device: " + registration.getEndpoint());
         for (int i = 0; i < registration.getObjectLinks().length; i++) {
-            System.out.println(registration.getObjectLinks()[i]);
+            mLogger.debug(registration.getObjectLinks()[i]);
         }
     }
 
+    public Integer create(JSONObject message) {
+        mLogger.debug("on create: " + message.toString());
+        return 0;
+    }
+
+    public Integer remove(JSONObject message) {
+        mLogger.debug("on remove: " + message.toString());
+        return 0;
+    }
 
     // *********** Run Server *************** //
-    public String update(String message) {
-        JSONObject data = new JSONObject(message);
+    public Integer update(JSONObject message) {
+        mLogger.debug("on update: " + message.toString());
 
         // Retrieve device id
 
-        String id = data.get("id").toString();
+        String id = message.get("id").toString();
         Registration registration = deviceManager.getDeviceRegistration(id);
         if (registration == null) {
-            return "NOK\n";
+            return -1;
         }
 
-
-        System.out.println(registration);
-
+        mLogger.debug(registration);
 
         // Get device label and new FW Version
-        String newFwVersion = DeviceManager.getStaticValue("fw_version", data);
-        String deviceLabel = DeviceManager.getStaticValue("device_type", data);
+        String newFwVersion = DeviceManager.getStaticValue("fw_version", message);
+        String deviceLabel = DeviceManager.getStaticValue("device_type", message);
 
         // Get device current FW version
         String currentFwVersion = requestHandler.ReadResource(registration, 3, 0, 3);
@@ -126,31 +132,26 @@ public class LwM2mAgent {
             requestHandler.WriteResource(registration, 5, 0, 1, fileUrl);
         }
 
-        return "OK\n";
+        return 0;
     }
 
-    public String actuate(String message) {
+    public Integer actuate(JSONObject message) {
+        mLogger.debug("on actuate: " + message.toString());
 
-        message = "{'data': {'attrs': {'luminosity': 10.6}, 'id': 'f9b1'},\n" +
-                " 'event': 'configure',\n" +
-                " 'meta': {'service': 'admin'}}";
-
-        JsonNode act = new JsonNode(message);
-        JSONObject data = act.getObject().getJSONObject("data");
-        String id = data.getString("id");
+        String id = message.getString("id");
         Registration registration = deviceManager.getDeviceRegistration(id);
 
         LwM2mModel model = modelProvider.getObjectModel(registration);
         Collection<ObjectModel> models = model.getObjectModels();
 
 
-        data = data.getJSONObject("attrs");
-        Iterator<?> keys = data.keys();
+        message = message.getJSONObject("attrs");
+        Iterator<?> keys = message.keys();
         while (keys.hasNext()) {
             try {
                 String key = (String) keys.next();
                 Integer[] path = lampLwm2m.get(key);
-                Object val = data.get(key);
+                Object val = message.get(key);
                 if (val instanceof String) {
                     WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (String) val));
                 } else if (val instanceof Double) {
@@ -161,15 +162,13 @@ public class LwM2mAgent {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                System.out.println(e);
+                mLogger.error(e);
             }
 
         }
 
-        return "OK\n";
-
+        return 0;
     }
-
 
     RegistrationListener listener = new RegistrationListener() {
         public void registered(Registration registration, Registration previousReg,
@@ -185,7 +184,7 @@ public class LwM2mAgent {
 
         public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
                                  Registration newReg) {
-            System.out.println("device left: " + registration.getEndpoint());
+            mLogger.debug("device left: " + registration.getEndpoint());
             deviceManager.DeregisterDevice(registration.getId());
         }
     };
@@ -218,7 +217,7 @@ public class LwM2mAgent {
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(e);
+            mLogger.error(e);
         }
     }
 
