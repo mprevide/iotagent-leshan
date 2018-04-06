@@ -22,7 +22,7 @@ class IotClient(object):
     def __init__(self):
         self.jwt_token = self.get_token()
         self.headers = {'Authorization': 'Bearer ' + self.jwt_token}
-        r = requests.get("http://localhost:5001/device?attr=fw_version=1.0.1&device_type=ExampleFW", headers=self.headers)
+        r = requests.get("http://localhost:8000/device?attr=fw_version=1.0.1&device_type=ExampleFW", headers=self.headers)
         print(r.text)
 
 
@@ -36,11 +36,10 @@ class IotClient(object):
 
 
 
-    def upload_image(self, filename, device, fw_version, hw_version):
+    def upload_image(self, filename, device, fw_version):
         payload = {
             "label": device,
             "fw_version": fw_version,
-            "hw_version": hw_version,
             "sha1": get_sha1(filename).hexdigest()
         }
 

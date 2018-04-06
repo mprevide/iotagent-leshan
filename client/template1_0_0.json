@@ -1,0 +1,40 @@
+{
+  "label": "Template_1_0_0",
+  "attrs": [
+    {
+      "label": "fw_version",
+      "type": "static",
+      "value_type": "string",
+      "static_value": "1.0.0",
+      "metadata": [
+        {"label": "oi", "static_value": "/3/0/3", "type": "lwm2m", "value_type": "string"}
+      ]
+    },
+    {
+      "label": "device_type",
+      "type": "static",
+      "value_type": "string",
+      "static_value": "ExampleFW",
+      "metadata": [
+        {"label": "oi", "static_value": "/3/0/1", "type": "lwm2m", "value_type": "string"}
+      ]
+    },
+    {
+      "label": "serial_number",
+      "type": "static",
+      "value_type": "string",
+      "static_value": "123456789",
+      "metadata": [
+        {"label": "oi", "static_value": "/3/0/2", "type": "lwm2m", "value_type": "string"}
+      ]
+    },
+    {
+      "label": "luminosity",
+      "type": "actuator",
+      "value_type": "float",
+      "extra": {
+        "path": "5000/0/2"
+      }
+    }
+  ]
+}
