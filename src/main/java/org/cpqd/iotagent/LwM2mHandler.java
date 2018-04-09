@@ -58,9 +58,16 @@ public class LwM2mHandler {
     }
 
 
-    public void WriteResource(Registration registration, int objectId, int objectInstanceId, int resourceId, String value) {
+    public void WriteResource(Registration registration, int objectId, int objectInstanceId, int resourceId, Object value) {
         try {
-            WriteResponse response = server.send(registration, new WriteRequest(objectId, objectInstanceId, resourceId, value), writeTimeout);
+            if (value instanceof String) {
+                WriteResponse response = server.send(registration, new WriteRequest(objectId, objectInstanceId, resourceId, (String) value));
+            } else if (value instanceof Double) {
+                WriteResponse response = server.send(registration, new WriteRequest(objectId, objectInstanceId, resourceId, (Double) value));
+            } else if (value instanceof Boolean) {
+                WriteResponse response = server.send(registration, new WriteRequest(objectId, objectInstanceId, resourceId, (Boolean) value));
+            }
+
         } catch (Exception e) {
             // Todo(jsiloto): Log errors here
             e.printStackTrace();

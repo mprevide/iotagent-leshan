@@ -170,40 +170,17 @@ public class LwM2mAgent implements Runnable {
 
     private Integer on_actuate(JSONObject message) {
         mLogger.debug("on_actuate: " + message.toString());
+        JsonElement o = new JsonParser().parse(message);
+        JsonObject attrs = o.getAsJsonObject().get("attrs").getAsJsonObject();
+        String deviceId = o.getAsJsonObject().get("id").getAsString();
+        Registration registration = deviceManager.getDeviceRegistration(deviceId);
 
-        String message_tmp = "{'data': {'attrs': {'luminosity': 10.6}, 'id': 'f9b1'},\n" +
-                " 'event': 'configure',\n" +
-                " 'meta': {'service': 'admin'}}";
 
-        JsonNode act = new JsonNode(message_tmp);
-        // TODO(jsiloto) use only Gson instead of org.json
-        JSONObject data = act.getObject().getJSONObject("data");
-        String id = data.getString("id");
-        Registration registration = deviceManager.getDeviceRegistration(id);
-
-        LwM2mModel model = modelProvider.getObjectModel(registration);
-        Collection<ObjectModel> models = model.getObjectModels();
-
-        data = data.getJSONObject("attrs");
-        Iterator<?> keys = data.keys();
-        while (keys.hasNext()) {
-            try {
-                String key = (String) keys.next();
-                Integer[] path = lampLwm2m.get(key);
-                Object val = data.get(key);
-                if (val instanceof String) {
-                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (String) val));
-                } else if (val instanceof Double) {
-                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (Double) val));
-                } else if (val instanceof Boolean) {
-                    WriteResponse response = server.send(registration, new WriteRequest(path[0], path[1], path[2], (Boolean) val));
-                }
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                mLogger.error(e);
+        for (Map.Entry<String, JsonElement> attr : attrs.entrySet()){
+            Integer[] path = deviceManager.getPathFromLabel(attr.getKey());
+            if(path != null){
+                requestHandler.WriteResource(registration, path[0], path[1], path[2], attr.getValue());
             }
-
         }
 
         return 0;
@@ -269,6 +246,7 @@ public class LwM2mAgent implements Runnable {
 
             // Define model provider
             builder.setObjectModelProvider(modelProvider);
+
 
             // Start Server
             server = builder.build();
