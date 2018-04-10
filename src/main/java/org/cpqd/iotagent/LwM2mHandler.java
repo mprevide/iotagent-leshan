@@ -9,6 +9,7 @@ In case of failure any request should fail silently
  */
 
 import com.google.gson.Gson;
+import org.apache.kafka.common.protocol.types.Field;
 import org.eclipse.leshan.core.request.ObserveRequest;
 import org.apache.log4j.Logger;
 import org.eclipse.leshan.core.request.ReadRequest;

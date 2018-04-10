@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import org.eclipse.leshan.core.model.LwM2mModel;
 import org.eclipse.leshan.core.model.ObjectLoader;
 import org.eclipse.leshan.core.model.ObjectModel;
+import org.eclipse.leshan.core.model.ResourceModel;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
 import org.eclipse.leshan.core.node.codec.LwM2mNodeDecoder;
@@ -67,7 +68,7 @@ public class LwM2mAgent implements Runnable {
         this.mIotaManager.addCallback("create", this::on_create);
         this.mIotaManager.addCallback("update", this::on_update);
         this.mIotaManager.addCallback("remove", this::on_remove);
-        this.mIotaManager.addCallback("actuate", this::on_actuate);
+        this.mIotaManager.addCallback("configure", this::on_actuate);
     }
 
     private static Gson createGson() {
@@ -185,7 +186,7 @@ public class LwM2mAgent implements Runnable {
 
     private Integer on_actuate(JSONObject message) {
         mLogger.debug("on_actuate: " + message.toString());
-        JsonElement o = new JsonParser().parse(message);
+        JsonElement o = new JsonParser().parse(message.toString());
         JsonObject attrs = o.getAsJsonObject().get("attrs").getAsJsonObject();
         String deviceId = o.getAsJsonObject().get("id").getAsString();
         Registration registration = deviceManager.getDeviceRegistration(deviceId);
