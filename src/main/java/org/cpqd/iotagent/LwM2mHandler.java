@@ -66,6 +66,8 @@ public class LwM2mHandler {
                 WriteResponse response = server.send(registration, new WriteRequest(objectId, objectInstanceId, resourceId, (Double) value));
             } else if (value instanceof Boolean) {
                 WriteResponse response = server.send(registration, new WriteRequest(objectId, objectInstanceId, resourceId, (Boolean) value));
+            } else if (value instanceof Integer) {
+                WriteResponse response = server.send(registration, new WriteRequest(objectId, objectInstanceId, resourceId, (Integer) value));
             }
 
         } catch (Exception e) {

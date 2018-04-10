@@ -33,6 +33,8 @@ class IotClient(object):
         url_query = "http://localhost:8000/device?attr=fw_version={}&device_type={}&serial_number={}".format(fw_version, device_label, serial_number)
         r = requests.get(url_query, headers=self.headers)
         devices = json.loads(r.text)["devices"]
+        if not devices:
+            return ""
         return devices[0]["id"]
 
 
@@ -48,7 +50,6 @@ class IotClient(object):
         payload = {
             "label": device,
             "fw_version": fw_version,
-            "sha1": get_sha1(filename).hexdigest()
         }
 
         # Upload Metadata

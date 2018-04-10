@@ -168,6 +168,21 @@ public class LwM2mAgent implements Runnable {
         return 0;
     }
 
+    private Object getObjectFromResourceJson (ResourceModel.Type type, JsonPrimitive attr){
+        switch (type){
+            case STRING:
+                return attr.getAsString();
+            case FLOAT:
+                return attr.getAsDouble();
+            case BOOLEAN:
+                return attr.getAsBoolean();
+            case INTEGER:
+                return attr.getAsInt();
+            default:
+                return attr.getAsString();
+        }
+    }
+
     private Integer on_actuate(JSONObject message) {
         mLogger.debug("on_actuate: " + message.toString());
         JsonElement o = new JsonParser().parse(message);
@@ -179,7 +194,9 @@ public class LwM2mAgent implements Runnable {
         for (Map.Entry<String, JsonElement> attr : attrs.entrySet()){
             Integer[] path = deviceManager.getPathFromLabel(attr.getKey());
             if(path != null){
-                requestHandler.WriteResource(registration, path[0], path[1], path[2], attr.getValue());
+                ResourceModel.Type type = modelProvider.getObjectModel(registration).getResourceModel(path[0], path[2]).type;
+                Object value = getObjectFromResourceJson(type, attr.getValue().getAsJsonPrimitive());
+                requestHandler.WriteResource(registration, path[0], path[1], path[2], value);
             }
         }
 
