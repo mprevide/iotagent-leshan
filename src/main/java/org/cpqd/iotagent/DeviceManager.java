@@ -1,5 +1,7 @@
 package org.cpqd.iotagent;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -23,9 +25,11 @@ public class DeviceManager {
 
     private String deviceUrl;
     private DinamicModelProvider modelProvider;
-    private Map<String, String> paths = new HashMap<>();
+    private BiMap<String, String> paths2labels = HashBiMap.create();
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
     private Map<String, String> Lwm2mDevices = new HashMap<String, String>();
+
+
 
     public DeviceManager(String deviceManagerUrl, DinamicModelProvider modelProvider) {
         this.deviceUrl = deviceManagerUrl + "/device";
@@ -34,7 +38,7 @@ public class DeviceManager {
 
 
     public void RegisterModel(Device device) {
-        Map<Integer, LinkedList<ResourceModel>> newModels = new HashMap<>();
+        Map<Integer, LinkedList<ResourceModel>> newModels = new HashMap<Integer, LinkedList<ResourceModel>>();
         LinkedList<ResourceModel> resources;
 
         String deviceLabel = device.label;
@@ -45,7 +49,6 @@ public class DeviceManager {
                 ResourceModel attrModel = attr.getLwm2mResourceModel();
                 int objectId = attr.getLwm2mPath()[0];
                 if (!newModels.containsKey(objectId)) {
-                    paths.put(attr.path, attr.label);
                     newModels.put(objectId, new LinkedList<ResourceModel>());
                 }
                 newModels.get(objectId).add(attr.getLwm2mResourceModel());
@@ -55,13 +58,21 @@ public class DeviceManager {
         // TODO(jsiloto): Should models be updated everytime?
         // Iterate over discovered models, add if not already in the provider
         for (Map.Entry<Integer, LinkedList<ResourceModel>> entry : newModels.entrySet()) {
-            int resourceId = entry.getKey();
+            Integer objectId = entry.getKey();
             LwM2mModel model = modelProvider.getObjectModel(null);
-            ObjectModel oldModel = model.getObjectModel(resourceId);
+            ObjectModel oldModel = model.getObjectModel(objectId);
             //TODO(jsiloto): Can't we just update the model with new attributes?
             if (oldModel == null) {
-                ObjectModel objectModel = new ObjectModel(resourceId, deviceLabel,
+                ObjectModel objectModel = new ObjectModel(objectId, deviceLabel,
                         "", "1", false, false, entry.getValue());
+
+                for(ResourceModel resource: entry.getValue()){
+                    String label = resource.name;
+                    Integer resourceId = resource.id;
+                    String path = objectId.toString() +"/0/"+resourceId.toString();
+                    paths2labels.put(path, label);
+                }
+
                 modelProvider.addObjectModel(objectModel);
             }
         }
@@ -131,6 +142,13 @@ public class DeviceManager {
         return modelProvider.getObjectModel(null).getResourceModel(ids[0], ids[2]).name;
 
     }
+
+    public Integer[] getPathFromLabel(String label) {
+        String path = paths2labels.inverse().get(label);
+        return DeviceAttribute.getIdsfromPath(path);
+    }
+
+
 
 
 }

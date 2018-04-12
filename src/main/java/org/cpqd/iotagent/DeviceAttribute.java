@@ -40,13 +40,13 @@ public class DeviceAttribute {
 
 
     public Integer[] getLwm2mPath() {
-        if (path.isEmpty()) {
-            return null;
-        }
         return getIdsfromPath(path);
     }
 
     public static Integer[] getIdsfromPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return null;
+        }
         String[] p = StringUtils.stripStart(path, "/").split("/");
         Integer[] result = Arrays.stream(p).map(s -> Integer.valueOf(s)).toArray(Integer[]::new);
         return result;

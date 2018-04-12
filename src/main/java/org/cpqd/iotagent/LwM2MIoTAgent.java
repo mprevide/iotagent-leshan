@@ -8,8 +8,8 @@ public class LwM2MIoTAgent {
 
         logger.info("Starting LwM2M IoTAgent...");
 
-        String imageManagerUrl = "http://localhost:5000";
-        String deviceManagerUrl = "http://localhost:5001";
+        String imageManagerUrl = "http://image-manager:5000";
+        String deviceManagerUrl = "http://device-manager:5000";
 
         LwM2mAgent agent = new LwM2mAgent(deviceManagerUrl, imageManagerUrl);
 

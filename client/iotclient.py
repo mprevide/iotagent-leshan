@@ -9,6 +9,11 @@ import datetime
 import hashlib
 
 
+def load_template(filename):
+    with open(filename, "r") as f:
+        return json.load(f)
+
+
 def get_sha1(filename):
     sha1 = hashlib.sha1()
     # Calculate sha1 for our example file
@@ -22,10 +27,15 @@ class IotClient(object):
     def __init__(self):
         self.jwt_token = self.get_token()
         self.headers = {'Authorization': 'Bearer ' + self.jwt_token}
-        r = requests.get("http://localhost:8000/device?attr=fw_version=1.0.1&device_type=ExampleFW", headers=self.headers)
-        print(r.text)
 
 
+    def get_device_id(self, device_label, fw_version, serial_number):
+        url_query = "http://localhost:8000/device?attr=fw_version={}&device_type={}&serial_number={}".format(fw_version, device_label, serial_number)
+        r = requests.get(url_query, headers=self.headers)
+        devices = json.loads(r.text)["devices"]
+        if not devices:
+            return ""
+        return devices[0]["id"]
 
 
     def get_token(self):
@@ -40,7 +50,6 @@ class IotClient(object):
         payload = {
             "label": device,
             "fw_version": fw_version,
-            "sha1": get_sha1(filename).hexdigest()
         }
 
         # Upload Metadata

@@ -1,13 +1,9 @@
 #! /bin/usr/python3
 
-from iotclient import IotClient
+from iotclient import IotClient, load_template
 from copy import deepcopy
 import json
 
-
-def load_template(filename):
-    with open(filename, "r") as f:
-        return json.load(f)
 
 
 iotc = IotClient()
