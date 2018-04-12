@@ -21,33 +21,25 @@ https://github.com/zephyrproject-rtos/net-tools
     # On Terminal #2
     git clone --recursive https://github.com/jsiloto/iotagent-leshan
     cd iotagent
-    git checkout 0.2.0
     
     # Run Database Fixture for this example
     cd client
     python3 db_fixture.py
-    
-    # Build and Run COAP Fileserver
-    cd iotagent-leshan
-    mkdir fw
-    docker build -f fileserver.Dockerfile -t local/fileserver .
-    docker run --rm -it -v $PWD/fw:/usr/src/app/demo-apps/cf-simplefile-server/data -p 5693:5693/udp local/fileserver
-    
-    # On Terminal #3
+
     # Build and Run IoTAgent
     cd iotagent-leshan
     docker build -f Dockerfile -t local/iotagent-leshan .
-    docker run --rm -it --network dockercompose_default -p 5683:5683/udp local/iotagent-leshan
+    docker run --rm -it --network dockercompose_default -p 5683:5683/udp -p 5693:5693/udp local/iotagent-leshan
     
-    # On Terminal #4
+    # On Terminal #3
     cd net-tools
     ./loop-socat.sh
     
-    # On Terminal #5
+    # On Terminal #4
     cd net-tools
     ./loop-slip-tap.sh
     
-    # On Terminal #6
+    # On Terminal #5
     # Get repo version with working example
     cd zephyr
     git remote add jsiloto git@github.com:jsiloto/zephyr.git
