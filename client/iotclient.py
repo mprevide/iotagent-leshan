@@ -46,21 +46,23 @@ class IotClient(object):
 
 
 
-    def upload_image(self, filename, device, fw_version):
+    def upload_image(self, filename, template_name, fw_version):
         payload = {
-            "label": device,
+            "label": template_name,
             "fw_version": fw_version,
         }
 
         # Upload Metadata
-        base_url = 'http://localhost:8000/image/'
-        r = requests.post(base_url, json=payload, headers=self.headers)
+        base_url = 'http://localhost:8000/fw-image'
+        r = requests.post(base_url + "/image/", json=payload, headers=self.headers)
         image_url = json.loads(r.text)['url']
-        image_url = urllib.parse.urljoin(base_url, image_url)
-        binary_url = urllib.parse.urljoin(image_url + "/", "binary")
+        image_url =  base_url + image_url
+        binary_url = image_url + "/binary"
+        print(binary_url)
         # Upload File
         files = {'image': open(filename, 'rb')}
         r = requests.post(binary_url, files=files, headers=self.headers)
+        print(r.text)
 
         return image_url
 
