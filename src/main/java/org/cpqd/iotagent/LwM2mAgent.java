@@ -69,6 +69,7 @@ public class LwM2mAgent implements Runnable {
         this.mIotaManager.addCallback("update", this::on_update);
         this.mIotaManager.addCallback("remove", this::on_remove);
         this.mIotaManager.addCallback("configure", this::on_actuate);
+        this.mIotaManager.addCallback("template.update", this::on_template_update);
     }
 
     private static Gson createGson() {
@@ -122,6 +123,20 @@ public class LwM2mAgent implements Runnable {
         }
     }
 
+    private void updateFW(Registration registration, String newFwVersion, String templateLabel) {
+        // Get device current FW version
+        String currentFwVersion = requestHandler.ReadResource(registration, 3, 0, 3);
+
+        // If Version has changed Update
+        if (!currentFwVersion.equals(newFwVersion)) {
+            mLogger.debug("Update Succesfull");
+            String fileUrl = imageDownloader.ImageUrl("admin", templateLabel, newFwVersion);
+            requestHandler.WriteResource(registration, 5, 0, 1, fileUrl);
+        } else {
+            mLogger.debug("Device already Up-to-date");
+        }
+    }
+
 
     // *********** Run Server *************** //
     private Integer on_create(JSONObject message) {
@@ -135,6 +150,7 @@ public class LwM2mAgent implements Runnable {
 
     private Integer on_update(JSONObject message) {
         mLogger.debug("on_update: " + message.toString());
+
         JsonElement o = new JsonParser().parse(message.toString());
         Device device = new Device(o);
         deviceManager.RegisterModel(device);
@@ -150,16 +166,10 @@ public class LwM2mAgent implements Runnable {
 
         // Get device label and new FW Version
         String newFwVersion = device.getStaticValue("fw_version");
-        String deviceLabel = device.getStaticValue("device_type");
+        String templateId = device.getTemplateId("fw_version");
+        String templateLabel = deviceManager.GetTemplateLabel("admin", templateId);
 
-        // Get device current FW version
-        String currentFwVersion = requestHandler.ReadResource(registration, 3, 0, 3);
-
-        // If Version has changed Update
-        if (!currentFwVersion.equals(newFwVersion)) {
-            String fileUrl = imageDownloader.ImageUrl("admin", deviceLabel, newFwVersion);
-            requestHandler.WriteResource(registration, 5, 0, 1, fileUrl);
-        }
+        updateFW(registration, newFwVersion, templateLabel);
 
         return 0;
     }
@@ -169,8 +179,8 @@ public class LwM2mAgent implements Runnable {
         return 0;
     }
 
-    private Object getObjectFromResourceJson (ResourceModel.Type type, JsonPrimitive attr){
-        switch (type){
+    private Object getObjectFromResourceJson(ResourceModel.Type type, JsonPrimitive attr) {
+        switch (type) {
             case STRING:
                 return attr.getAsString();
             case FLOAT:
@@ -184,6 +194,35 @@ public class LwM2mAgent implements Runnable {
         }
     }
 
+
+    private Integer on_template_update(JSONObject message) {
+        mLogger.debug("on_template_update: " + message.toString());
+        JsonObject o = new JsonParser().parse(message.toString()).getAsJsonObject();
+
+        // get new fw version
+
+        System.out.println("\n\n\n");
+        LinkedList<DeviceAttribute> attrs = Device.getAttributeListFromTemplate(o.get("template").getAsJsonObject().get("attrs"));
+        String newFwVersion = Device.getStaticValue(attrs, "fw_version");
+        String templateLabel = o.get("template").getAsJsonObject().get("label").getAsString();
+
+
+        //iterate over each affected device
+        //if device exists and is connected
+        System.out.println(o.get("affected"));
+        for (JsonElement deviceId : o.get("affected").getAsJsonArray()) {
+            mLogger.debug(String.format("Trying to update: %s with version: %s", deviceId.getAsString(), newFwVersion));
+            Registration registration = deviceManager.getDeviceRegistration(deviceId.getAsString());
+            if (registration == null) {
+                mLogger.debug("No such device");
+                continue;
+            }
+            updateFW(registration, newFwVersion, templateLabel);
+
+        }
+        return 0;
+    }
+
     private Integer on_actuate(JSONObject message) {
         mLogger.debug("on_actuate: " + message.toString());
         JsonElement o = new JsonParser().parse(message.toString());
@@ -192,9 +231,9 @@ public class LwM2mAgent implements Runnable {
         Registration registration = deviceManager.getDeviceRegistration(deviceId);
 
 
-        for (Map.Entry<String, JsonElement> attr : attrs.entrySet()){
+        for (Map.Entry<String, JsonElement> attr : attrs.entrySet()) {
             Integer[] path = deviceManager.getPathFromLabel(attr.getKey());
-            if(path != null){
+            if (path != null) {
                 ResourceModel.Type type = modelProvider.getObjectModel(registration).getResourceModel(path[0], path[2]).type;
                 Object value = getObjectFromResourceJson(type, attr.getValue().getAsJsonPrimitive());
                 requestHandler.WriteResource(registration, path[0], path[1], path[2], value);
