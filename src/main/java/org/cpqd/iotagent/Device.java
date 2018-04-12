@@ -13,7 +13,7 @@ public class Device {
     String deviceId;
     public LinkedList<DeviceAttribute> attributes;
 
-    public static LinkedList<DeviceAttribute> getAttributeListFromTemplate(JsonElement template){
+    public static LinkedList<DeviceAttribute> getAttributeListFromTemplate(JsonElement template) {
         LinkedList<DeviceAttribute> attrList = new LinkedList<>();
         System.out.println(template);
 
@@ -24,7 +24,7 @@ public class Device {
         return attrList;
     }
 
-    public static LinkedList<DeviceAttribute> getAttributeList(JsonElement attrs){
+    public static LinkedList<DeviceAttribute> getAttributeList(JsonElement attrs) {
         LinkedList<DeviceAttribute> attrList = new LinkedList<>();
         // Get all ResourceModels for each attribute
         JsonObject data = attrs.getAsJsonObject().get("attrs").getAsJsonObject();
@@ -34,8 +34,6 @@ public class Device {
         }
         return attrList;
     }
-
-
 
 
     public Device(JsonElement device) {

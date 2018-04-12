@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.leshan.core.model.ResourceModel;
+
 import java.util.Arrays;
 
 /*
@@ -23,7 +24,7 @@ public class DeviceAttribute {
         label = json.getAsJsonObject().get("label").getAsString();
         type = json.getAsJsonObject().get("type").getAsString();
         valueType = json.getAsJsonObject().get("value_type").getAsString();
-        if(json.getAsJsonObject().has("template_id")){
+        if (json.getAsJsonObject().has("template_id")) {
             templateId = json.getAsJsonObject().get("template_id").getAsString();
         }
 
