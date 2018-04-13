@@ -3,7 +3,7 @@ fw/
 *.iml
 *.pyc
 .idea*
-
+data/
 
 
 
