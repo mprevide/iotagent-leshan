@@ -29,8 +29,8 @@ class IotClient(object):
         self.headers = {'Authorization': 'Bearer ' + self.jwt_token}
 
 
-    def get_device_id(self, device_label, fw_version, serial_number):
-        url_query = "http://localhost:8000/device?attr=fw_version={}&device_type={}&serial_number={}".format(fw_version, device_label, serial_number)
+    def get_device_id(self, device_label, serial_number):
+        url_query = "http://localhost:8000/device?attr=device_type={}&serial_number={}".format(device_label, serial_number)
         r = requests.get(url_query, headers=self.headers)
         devices = json.loads(r.text)["devices"]
         if not devices:
