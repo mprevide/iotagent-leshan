@@ -1,58 +1,34 @@
-#Running
-    
-Be sure to have the necessary environment with docker, docker-compose, zephyr, zephyr_sdk, and net-tools
-https://docs.docker.com/install/
+This is an LWM2M IoTAgent, part of the [dojot project](http://dojotdocs.readthedocs.io).
+It was written in java and uses [Eclipse Leshan](https://www.eclipse.org/leshan/) as base for LWM2M handling.
 
-https://docs.docker.com/compose/install/
+The purpose of this module is to translate device configurations sent to dojot via device-manager
+into LWM2M configuration and commands.
 
-http://docs.zephyrproject.org/getting_started/installation_linux.html
+# OMA-LWM2M vs and Device Manager Model:
 
-https://github.com/zephyrproject-rtos/net-tools
-    
-    
-    # On Terminal #1 
+- Explain differences
+- Minimal LWM2M requirements
+- OMA discovery
+- oma2devicemanager.py guide
+
+# Running
+
+The IoTAgent is a highly connected component inside the dojot ecosystem, 
+proper usage requires the dojot environment up and running.
+For an in depth guide of running dojot check out this [link](http://dojotdocs.readthedocs.io/en/stable/user_guide.html)
+For a quick setup run the provided docker-compose, it should already contain
+this service running:
+
     # Clone and bring up the dojot infrastructure with docker compose
     # Be aware this may take a few minutes (or hours depending on your connection)
     git clone git@github.com:dojot/docker-compose.git
     cd docker-compose
-    git checkout 0.2.0
+    git checkout X.X.X
     docker-compose up -d
-    
-    # On Terminal #2
-    git clone --recursive https://github.com/jsiloto/iotagent-leshan
-    cd iotagent
-    
-    # Run Database Fixture for this example
-    cd client
-    python3 db_fixture.py
 
-    # Build and Run IoTAgent
-    cd iotagent-leshan
-    docker build -f Dockerfile -t local/iotagent-leshan .
-    docker run --rm -it --network dockercompose_default -p 5683:5683/udp -p 5693:5693/udp local/iotagent-leshan
-    
-    # On Terminal #3
-    cd net-tools
-    ./loop-socat.sh
-    
-    # On Terminal #4
-    cd net-tools
-    ./loop-slip-tap.sh
-    
-    # On Terminal #5
-    # Get repo version with working example
-    cd zephyr
-    git remote add jsiloto git@github.com:jsiloto/zephyr.git
-    git fetch jsiloto
-    git checkout jsiloto/master
-    cd samples/net/lwm2m_client/
-    mkdir -p build
-    cd build
-    make pristine
-    cmake -DBOARD=qemu_cortex_m3 ..
-    make run -j4
-    
-    # Open your browser on http://localhost:8000
-    # Login with admin/admin
+We also provide a full example to run it yourself [here](./docs/running.md).
+
+Also check out some use cases [here](./docs/usage.md)
+
 
    
