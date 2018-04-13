@@ -16,8 +16,8 @@ into LWM2M configuration and commands.
 The IoTAgent is a highly connected component inside the dojot ecosystem, 
 proper usage requires the dojot environment up and running.
 For an in depth guide of running dojot check out this [link](http://dojotdocs.readthedocs.io/en/stable/user_guide.html)
-For a quick setup run the provided docker-compose, it should already contain
-this service running:
+For a quick setup run the provided docker-compose, starting o version X.X.X
+it should already contain this service:
 
     # Clone and bring up the dojot infrastructure with docker compose
     # Be aware this may take a few minutes (or hours depending on your connection)
