@@ -6,6 +6,8 @@ build a Zephyr RTOS example mocking a LWM2M device and interact with this device
 
 ## Dependencies
 
+    sudo apt-get install libpcap-dev socat libssl-dev
+
 Be sure to have the necessary environment with docker, docker-compose, zephyr, zephyr_sdk, and net-tools
 
 - https://docs.docker.com/install/
@@ -29,16 +31,19 @@ Build the iotagent and populate the database
     
     # On Terminal #2
     git clone --recursive https://github.com/jsiloto/iotagent-leshan
+    # if you forgot to clone recursively run:
+    # git submodule update --init
     cd iotagent
     
     # Run Database Fixture for this example
     cd client
+    pip3 install --user -r requirements.txt
     python3 db_fixture.py
     
     # Build and Run IoTAgent
     cd iotagent-leshan
     docker build -f Dockerfile -t local/iotagent-leshan .
-    docker run --rm -it --network dockercompose_default -p 5683:5683/udp -p 5693:5693/udp local/iotagent-leshan
+    docker run --rm -it --network docker-compose_default -p 5683:5683/udp -p 5693:5693/udp local/iotagent-leshan
 
 Set up a SLIP interface using net-tools
 
