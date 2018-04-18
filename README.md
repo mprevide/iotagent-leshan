@@ -6,10 +6,14 @@ into LWM2M configuration and commands.
 
 # OMA-LWM2M vs and Device Manager Model:
 
-- Explain differences
-- Minimal LWM2M requirements
-- OMA discovery
-- oma2devicemanager.py guide
+Dojot and LwM2M have different device and connection models. 
+For starters, while dojot's device registration is a role of the user,
+in LwM2M the connection is initiated by the device.
+
+To accomodate these diferences a minimum configuration is expected of each device.
+It should provide resources 3/0/1 and 3/0/2, and use the following [template](client/lwm2m_base.json):
+
+A fuller explanation is available at the [modeling](./docs/modeling.md) docs.
 
 # Running
 
