@@ -180,6 +180,7 @@ public class DeviceManager {
     }
 
     public String getDeviceService(String deviceId){
+        // TODO(jsiloto): implement deviceService populate mechanism
         return deviceService.get(deviceId);
     }
 

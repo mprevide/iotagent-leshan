@@ -94,9 +94,10 @@ public class LwM2mAgent implements Runnable {
 
     // ********* Methods ****************** //
 
-    private void registerNewDevice(Registration registration, String service) {
+    private void registerNewDevice(Registration registration) {
 
         //Get ID
+        String service = "admin";
 
         // Check device manager if device exists, if not drop
         String DeviceModel = requestHandler.ReadResource(registration, 3, 0, 1);
@@ -171,7 +172,7 @@ public class LwM2mAgent implements Runnable {
         String templateId = device.getTemplateId("fw_version");
         String templateLabel = deviceManager.GetTemplateLabel(service, templateId);
 
-        updateFW(registration, newFwVersion, templateLabel);
+        updateFW(registration, newFwVersion, templateLabel, service);
 
         return 0;
     }
@@ -223,7 +224,7 @@ public class LwM2mAgent implements Runnable {
                 mLogger.debug("No such device");
                 continue;
             }
-            updateFW(registration, newFwVersion, templateLabel);
+            updateFW(registration, newFwVersion, templateLabel, service);
 
         }
         return 0;
@@ -233,7 +234,7 @@ public class LwM2mAgent implements Runnable {
         mLogger.debug("on_actuate: " + message.toString());
         JsonElement o = new JsonParser().parse(message.toString());
         String service = o.getAsJsonObject().get("meta").getAsJsonObject().get("service").getAsString();
-        
+
         JsonElement data = o.getAsJsonObject().get("data");
         JsonObject attrs = data.getAsJsonObject().get("attrs").getAsJsonObject();
         String deviceId = data.getAsJsonObject().get("id").getAsString();
@@ -286,6 +287,7 @@ public class LwM2mAgent implements Runnable {
             String label = deviceManager.getLabelFromPath(observation.getPath().toString());
             attrs.add(label, element.getAsJsonObject().get("value"));
             String deviceId = deviceManager.getDeviceId(observation.getRegistrationId());
+            String service = deviceManager.getDeviceService(deviceId);
             mIotaManager.updateAttrs(deviceId, service, new JSONObject(attrs.toString()), null);
         }
 
