@@ -112,7 +112,6 @@ public class DeviceManager {
     }
 
     public String GetTemplateLabel(String service, String templateId){
-        //TODO(jsiloto) Move duplicated code from GetDeviceFromDeviceManager into a separate function
         String token = TenancyManager.GetJwtToken(service);
         String query = "?attr=template_id=" + templateId;
         String url = this.templateUrl + query;
