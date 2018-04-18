@@ -23,11 +23,11 @@ public class TenancyManager {
                     .withIssuedAt(new Date(1517339633))
                     .withExpiresAt(new Date(1517340053))
                     .withClaim("email", "admin@noemail.com")
-                    .withClaim("profile", "admin")
+                    .withClaim("profile", service)
                     .withIssuer("eGfIBvOLxz5aQxA92lFk5OExZmBMZDDh")
                     .withClaim("service", service)
                     .withJWTId("7e3086317df2c299cef280932da856e5")
-                    .withClaim("username", "admin")
+                    .withClaim("username", service)
                     .sign(algorithm);
         } catch (UnsupportedEncodingException exception) {
             //UTF-8 encoding not supported

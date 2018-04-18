@@ -94,7 +94,7 @@ public class LwM2mAgent implements Runnable {
 
     // ********* Methods ****************** //
 
-    private void registerNewDevice(Registration registration) {
+    private void registerNewDevice(Registration registration, String service) {
 
         //Get ID
 
@@ -103,9 +103,9 @@ public class LwM2mAgent implements Runnable {
         String SerialNumber = requestHandler.ReadResource(registration, 3, 0, 2);
         mLogger.debug(DeviceModel + " / " + SerialNumber);
         String Lwm2mId = registration.getId();
-        JsonElement deviceJson = deviceManager.GetDeviceFromDeviceManager("admin", DeviceModel, SerialNumber);
+        JsonElement deviceJson = deviceManager.GetDeviceFromDeviceManager(service, DeviceModel, SerialNumber);
         Device device = new Device(deviceJson);
-        deviceManager.RegisterDevice(device, "admin", Lwm2mId, DeviceModel, SerialNumber, registration);
+        deviceManager.RegisterDevice(device, service, Lwm2mId, DeviceModel, SerialNumber, registration);
 
 
         // Register listeners for dynamic data
@@ -123,14 +123,14 @@ public class LwM2mAgent implements Runnable {
         }
     }
 
-    private void updateFW(Registration registration, String newFwVersion, String templateLabel) {
+    private void updateFW(Registration registration, String newFwVersion, String templateLabel, String service) {
         // Get device current FW version
         String currentFwVersion = requestHandler.ReadResource(registration, 3, 0, 3);
 
         // If Version has changed Update
         if (!currentFwVersion.equals(newFwVersion)) {
             mLogger.debug("Update Succesfull");
-            String fileUrl = imageDownloader.ImageUrl("admin", templateLabel, newFwVersion);
+            String fileUrl = imageDownloader.ImageUrl(service, templateLabel, newFwVersion);
             requestHandler.WriteResource(registration, 5, 0, 1, fileUrl);
         } else {
             mLogger.debug("Device already Up-to-date");
@@ -167,7 +167,7 @@ public class LwM2mAgent implements Runnable {
         // Get device label and new FW Version
         String newFwVersion = device.getStaticValue("fw_version");
         String templateId = device.getTemplateId("fw_version");
-        String templateLabel = deviceManager.GetTemplateLabel("admin", templateId);
+        String templateLabel = deviceManager.GetTemplateLabel(service, templateId);
 
         updateFW(registration, newFwVersion, templateLabel);
 
@@ -277,7 +277,7 @@ public class LwM2mAgent implements Runnable {
             String label = deviceManager.getLabelFromPath(observation.getPath().toString());
             attrs.add(label, element.getAsJsonObject().get("value"));
             String deviceId = deviceManager.getDeviceId(observation.getRegistrationId());
-            mIotaManager.updateAttrs(deviceId, "admin", new JSONObject(attrs.toString()), null);
+            mIotaManager.updateAttrs(deviceId, service, new JSONObject(attrs.toString()), null);
         }
 
         @Override
