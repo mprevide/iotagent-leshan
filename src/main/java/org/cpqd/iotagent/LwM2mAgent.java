@@ -142,7 +142,8 @@ public class LwM2mAgent implements Runnable {
     private Integer on_create(JSONObject message) {
         mLogger.debug("on_create: " + message.toString());
         JsonElement o = new JsonParser().parse(message.toString());
-        Device device = new Device(o);
+        String service = o.getAsJsonObject().get("meta").getAsJsonObject().get("service").getAsString();
+        Device device = new Device(o.getAsJsonObject().get("data"));
         deviceManager.RegisterModel(device);
         return 0;
     }
@@ -152,7 +153,8 @@ public class LwM2mAgent implements Runnable {
         mLogger.debug("on_update: " + message.toString());
 
         JsonElement o = new JsonParser().parse(message.toString());
-        Device device = new Device(o);
+        Device device = new Device(o.getAsJsonObject().get("data"));
+        String service = o.getAsJsonObject().get("meta").getAsJsonObject().get("service").getAsString();
         deviceManager.RegisterModel(device);
 
         // Retrieve device id
@@ -199,18 +201,22 @@ public class LwM2mAgent implements Runnable {
         mLogger.debug("on_template_update: " + message.toString());
         JsonObject o = new JsonParser().parse(message.toString()).getAsJsonObject();
 
+        JsonObject data = o.get("data").getAsJsonObject();
+        String service = o.get("meta").getAsJsonObject().get("service").getAsString();
+
+
         // get new fw version
 
         System.out.println("\n\n\n");
-        LinkedList<DeviceAttribute> attrs = Device.getAttributeListFromTemplate(o.get("template").getAsJsonObject().get("attrs"));
+        LinkedList<DeviceAttribute> attrs = Device.getAttributeListFromTemplate(data.get("template").getAsJsonObject().get("attrs"));
         String newFwVersion = Device.getStaticValue(attrs, "fw_version");
-        String templateLabel = o.get("template").getAsJsonObject().get("label").getAsString();
+        String templateLabel = data.get("template").getAsJsonObject().get("label").getAsString();
 
 
         //iterate over each affected device
         //if device exists and is connected
-        System.out.println(o.get("affected"));
-        for (JsonElement deviceId : o.get("affected").getAsJsonArray()) {
+        System.out.println(data.get("affected"));
+        for (JsonElement deviceId : data.get("affected").getAsJsonArray()) {
             mLogger.debug(String.format("Trying to update: %s with version: %s", deviceId.getAsString(), newFwVersion));
             Registration registration = deviceManager.getDeviceRegistration(deviceId.getAsString());
             if (registration == null) {
@@ -226,8 +232,11 @@ public class LwM2mAgent implements Runnable {
     private Integer on_actuate(JSONObject message) {
         mLogger.debug("on_actuate: " + message.toString());
         JsonElement o = new JsonParser().parse(message.toString());
-        JsonObject attrs = o.getAsJsonObject().get("attrs").getAsJsonObject();
-        String deviceId = o.getAsJsonObject().get("id").getAsString();
+        String service = o.getAsJsonObject().get("meta").getAsJsonObject().get("service").getAsString();
+        
+        JsonElement data = o.getAsJsonObject().get("data");
+        JsonObject attrs = data.getAsJsonObject().get("attrs").getAsJsonObject();
+        String deviceId = data.getAsJsonObject().get("id").getAsString();
         Registration registration = deviceManager.getDeviceRegistration(deviceId);
 
 
