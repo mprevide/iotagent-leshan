@@ -29,9 +29,10 @@ Once a registration exists an incoming connection will be accepted and all *dyna
 will be registered for notification.
 
 A minimal working dojot template is [provided](../client/lwm2m_base.json)
- 
+
  
 ### Object resource discovery
+
 Once the device is properly connected, all attributes containing lwm2m metadata will
 be inspected, eg.:
 
@@ -55,6 +56,15 @@ to avoid discrepancies (This may be reviewed).
 
 ### Model Conversion
 
-Any LwM2M object model is expected to be provided for a given device that implements it.
-To convert OMA models to Dojot models we provide a [script](../client/oma2template.py)
-and an [user guide](../docs/oma2template_tutorial.md) for conversion
+In a given device, each Resource/Attribute is uniquely identified by:
+
+- Label and Type on Dojot
+- Object/Instance/Resource path on LwM2M
+
+This provides a one-to-one mapping of any resource, represented in the attribute metadata
+(See above), but doesn't enforce any rule as to the values expected in this mapping.
+To facilitate this conversion, we provide a [script](../client/oma2template.py) 
+to convert OMA xml specification 
+(see [this](http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html))
+ to Dojot template model. More information is available on this
+[user guide](../docs/oma2template_tutorial.md)
