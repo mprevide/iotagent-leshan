@@ -96,6 +96,8 @@ public class LwM2mAgent implements Runnable {
 
     private void registerNewDevice(Registration registration) {
 
+        mLogger.trace(String.format("Trying to register: %s", registration.getId()));
+
         //Get ID
         String service = "admin";
 
@@ -208,7 +210,6 @@ public class LwM2mAgent implements Runnable {
 
         // get new fw version
 
-        System.out.println("\n\n\n");
         LinkedList<DeviceAttribute> attrs = Device.getAttributeListFromTemplate(data.get("template").getAsJsonObject().get("attrs"));
         String newFwVersion = Device.getStaticValue(attrs, "fw_version");
         String templateLabel = data.get("template").getAsJsonObject().get("label").getAsString();
@@ -216,7 +217,6 @@ public class LwM2mAgent implements Runnable {
 
         //iterate over each affected device
         //if device exists and is connected
-        System.out.println(data.get("affected"));
         for (JsonElement deviceId : data.get("affected").getAsJsonArray()) {
             mLogger.debug(String.format("Trying to update: %s with version: %s", deviceId.getAsString(), newFwVersion));
             Registration registration = deviceManager.getDeviceRegistration(deviceId.getAsString());
@@ -287,7 +287,8 @@ public class LwM2mAgent implements Runnable {
             String label = deviceManager.getLabelFromPath(observation.getPath().toString());
             attrs.add(label, element.getAsJsonObject().get("value"));
             String deviceId = deviceManager.getDeviceId(observation.getRegistrationId());
-            String service = deviceManager.getDeviceService(deviceId);
+            // String service = deviceManager.getDeviceService(deviceId);
+            String service = "admin";
             mIotaManager.updateAttrs(deviceId, service, new JSONObject(attrs.toString()), null);
         }
 
