@@ -13,38 +13,33 @@ https://github.com/zephyrproject-rtos/net-tools
     # On Terminal #1 
     # Clone and bring up the dojot infrastructure with docker compose
     # Be aware this may take a few minutes (or hours depending on your connection)
-    git clone git@github.com:jsiloto/docker-compose.git
+    git clone git@github.com:dojot/docker-compose.git
     cd docker-compose
+    git checkout 0.2.0
     docker-compose up -d
     
     # On Terminal #2
-    git clone --recursive https://github.com/jsiloto/iotagent
+    git clone --recursive https://github.com/jsiloto/iotagent-leshan
     cd iotagent
-    git checkout 0.1.0
     
     # Run Database Fixture for this example
-    python3 client.py
-    
-    # Build and Run COAP Fileserver
-    mkdir fw
-    docker build -f fileserver.Dockerfile -t local/fileserver .
-    docker run --rm -it -v $PWD/fw:/usr/src/app/demo-apps/cf-simplefile-server/data -p 5693:5693/udp local/fileserver
+    cd client
+    python3 db_fixture.py
+
+    # Build and Run IoTAgent
+    cd iotagent-leshan
+    docker build -f Dockerfile -t local/iotagent-leshan .
+    docker run --rm -it --network dockercompose_default -p 5683:5683/udp -p 5693:5693/udp local/iotagent-leshan
     
     # On Terminal #3
-    # Build and Run IoTAgent
-    cd iotagent
-    mvn install
-    java -jar target/iotagent-0.1.0-SNAPSHOT-jar-with-dependencies.jar
-    
-    # On Terminal #4
     cd net-tools
     ./loop-socat.sh
     
-    # On Terminal #5
+    # On Terminal #4
     cd net-tools
     ./loop-slip-tap.sh
     
-    # On Terminal #6
+    # On Terminal #5
     # Get repo version with working example
     cd zephyr
     git remote add jsiloto git@github.com:jsiloto/zephyr.git

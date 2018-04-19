@@ -1,5 +1,10 @@
 language: java
 services:
   - docker
+before_install:
+  - cd californium
+  - git checkout 2.0.0-M6
+  - mvn install
+  - cd ..
 after_success:
   - travis/publish.sh

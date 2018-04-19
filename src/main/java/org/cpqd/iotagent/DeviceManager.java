@@ -24,6 +24,7 @@ public class DeviceManager {
     private Logger mLogger = Logger.getLogger(DeviceManager.class);
 
     private String deviceUrl;
+    private String templateUrl;
     private DinamicModelProvider modelProvider;
     private BiMap<String, String> paths2labels = HashBiMap.create();
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
@@ -33,6 +34,7 @@ public class DeviceManager {
 
     public DeviceManager(String deviceManagerUrl, DinamicModelProvider modelProvider) {
         this.deviceUrl = deviceManagerUrl + "/device";
+        this.templateUrl = deviceManagerUrl + "/template";
         this.modelProvider = modelProvider;
     }
 
@@ -108,6 +110,34 @@ public class DeviceManager {
         }
         return null;
     }
+
+    public String GetTemplateLabel(String service, String templateId){
+        String token = TenancyManager.GetJwtToken(service);
+        String query = "?attr=template_id=" + templateId;
+        String url = this.templateUrl + query;
+
+        try {
+            HttpResponse<JsonNode> response = Unirest.get(url).header("Authorization", "Bearer " + token).asJson();
+            if (response.getStatus() >= 300) {
+                return null;
+            }
+            JsonNode r = response.getBody();
+
+            JSONArray templates = r.getObject().getJSONArray("templates");
+            if (templates.length() == 0) {
+                return null;
+            }
+            JSONObject device = templates.getJSONObject(0);
+            String label = device.getString("label");
+            return label;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            mLogger.error(e);
+        }
+        return null;
+    }
+
 
     public void RegisterDevice(Device device, String service, String lwm2mId, String deviceModel, String serialNumber, Registration registration) {
         RegisterModel(device);

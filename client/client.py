@@ -10,7 +10,7 @@ iotc = IotClient()
 
 iotc.upload_image("example.hex", "ExampleFW", "1.0.1")
 
-template1 = load_template("template1_0_0.json")
+template1 = load_template("lwm2m_base.json")
 template2 = load_template("template1_0_1.json")
 temp_sensor_template = load_template("3303.json")
 light_bulb_template = load_template("3311.json")

@@ -1,5 +1,12 @@
 package org.cpqd.iotagent;
 import org.apache.log4j.Logger;
+import org.eclipse.californium.examples.SimpleFileServer;
+
+import java.io.File;
+import java.net.SocketException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+
 
 public class LwM2MIoTAgent {
 
@@ -12,6 +19,10 @@ public class LwM2MIoTAgent {
         String deviceManagerUrl = "http://device-manager:5000";
 
         LwM2mAgent agent = new LwM2mAgent(deviceManagerUrl, imageManagerUrl);
+
+        String[] fileArgs = {};
+        SimpleFileServer.main(fileArgs);
+
 
         (new Thread(agent)).start();
 

@@ -24,9 +24,9 @@ public class ImageDownloader {
     private String imageUrl;
 
     public ImageDownloader(String imageManagerUrl) {
-        this.imageUrl = imageManagerUrl + "/image/";
+        this.imageUrl = imageManagerUrl + "/image";
         try {
-            Path path = FileSystems.getDefault().getPath("./fw/");
+            Path path = FileSystems.getDefault().getPath("./data/");
             if (!Files.exists(path)) {
                 Files.createDirectory(path);
             }
@@ -34,22 +34,22 @@ public class ImageDownloader {
         }
     }
 
-    public String ImageUrl(String service, String deviceLabel, String version) {
+    public String ImageUrl(String service, String imageLabel, String version) {
         // TODO(jsiloto): Sanity check and return empty
-        String imageID = FetchImage("admin", deviceLabel, version);
+        String imageID = FetchImage("admin", imageLabel, version);
         String fileserverUrl = "coap://[2001:db8::2]:5693/data/";
         String fileUrl = fileserverUrl + imageID + ".hex";
         return fileUrl;
     }
 
-    public String FetchImage(String service, String deviceLabel, String version) {
+    public String FetchImage(String service, String imageLabel, String version) {
         String token = TenancyManager.GetJwtToken(service);
-        String imageID = GetImageId(deviceLabel, version, token);
+        String imageID = GetImageId(imageLabel, version, token);
         DownloadImage(imageID, token);
         return imageID;
     }
 
-    private String GetImageId(String deviceLabel, String version, String token) {
+    private String GetImageId(String imageLabel, String version, String token) {
         try {
 
             HttpResponse<JsonNode> response = Unirest.get(imageUrl)
@@ -62,7 +62,7 @@ public class ImageDownloader {
                 String d = image.getString("label");
                 String f = image.getString("fw_version");
                 Boolean haveBinary = image.getBoolean("confirmed");
-                if (d.equals(deviceLabel) && f.equals(version) && haveBinary) {
+                if (d.equals(imageLabel) && f.equals(version) && haveBinary) {
                     return image.getString("id");
                 }
             }
@@ -77,12 +77,12 @@ public class ImageDownloader {
 
     private void DownloadImage(String imageId, String token) {
         try {
-            HttpResponse<InputStream> fwInStream = Unirest.get(imageUrl + imageId + "/binary")
+            HttpResponse<InputStream> fwInStream = Unirest.get(imageUrl + "/" + imageId + "/binary")
                     .header("Authorization", "Bearer " + token)
                     .asBinary();
 
             InputStream in = fwInStream.getBody();
-            Path path = FileSystems.getDefault().getPath("./fw/" + imageId + ".hex");
+            Path path = FileSystems.getDefault().getPath("./data/" + imageId + ".hex");
             if (!Files.exists(path)) {
                 Files.createFile(path);
             }

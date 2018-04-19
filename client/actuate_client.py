@@ -9,7 +9,7 @@ iotc = IotClient()
 @click.option('--dimmer', help='% value', type=int)
 def actuate(switch, dimmer):
 
-    device_id = iotc.get_device_id("ExampleFW", "1.0.0", "123456789")
+    device_id = iotc.get_device_id("ExampleFW", "123456789")
 
     print(iotc)
     attrs = {}

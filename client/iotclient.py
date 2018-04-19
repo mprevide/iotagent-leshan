@@ -29,8 +29,8 @@ class IotClient(object):
         self.headers = {'Authorization': 'Bearer ' + self.jwt_token}
 
 
-    def get_device_id(self, device_label, fw_version, serial_number):
-        url_query = "http://localhost:8000/device?attr=fw_version={}&device_type={}&serial_number={}".format(fw_version, device_label, serial_number)
+    def get_device_id(self, device_label, serial_number):
+        url_query = "http://localhost:8000/device?attr=device_type={}&serial_number={}".format(device_label, serial_number)
         r = requests.get(url_query, headers=self.headers)
         devices = json.loads(r.text)["devices"]
         if not devices:
@@ -46,21 +46,23 @@ class IotClient(object):
 
 
 
-    def upload_image(self, filename, device, fw_version):
+    def upload_image(self, filename, template_name, fw_version):
         payload = {
-            "label": device,
+            "label": template_name,
             "fw_version": fw_version,
         }
 
         # Upload Metadata
-        base_url = 'http://localhost:8000/image/'
-        r = requests.post(base_url, json=payload, headers=self.headers)
+        base_url = 'http://localhost:8000/fw-image'
+        r = requests.post(base_url + "/image/", json=payload, headers=self.headers)
         image_url = json.loads(r.text)['url']
-        image_url = urllib.parse.urljoin(base_url, image_url)
-        binary_url = urllib.parse.urljoin(image_url + "/", "binary")
+        image_url =  base_url + image_url
+        binary_url = image_url + "/binary"
+        print(binary_url)
         # Upload File
         files = {'image': open(filename, 'rb')}
         r = requests.post(binary_url, files=files, headers=self.headers)
+        print(r.text)
 
         return image_url
 
