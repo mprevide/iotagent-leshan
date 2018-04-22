@@ -1,53 +1,81 @@
 import click
-import cmd
-import sys
+from iotclient import IotClient
+import db_fixture
 
-from click import BaseCommand, UsageError
+@click.group()
+def cli():
+    pass
 
+@cli.command()
+@click.option('--switch', help='[ON/OFF]', type=str)
+@click.option('--dimmer', help='% value', type=int)
+def actuate(switch, dimmer):
+    """Actuation commands for example"""
 
-class REPL(cmd.Cmd):
-    def __init__(self, ctx):
-        cmd.Cmd.__init__(self)
-        self.ctx = ctx
+    iotc = IotClient()
+    device_id = iotc.get_device_id("ExampleFW", "123456789")
 
-    def default(self, line):
-        subcommand = line.split()[0]
-        args = line.split()[1:]
+    print(iotc)
+    attrs = {}
 
-        subcommand = cli.commands.get(subcommand)
-        if subcommand:
-            try:
-                subcommand.parse_args(self.ctx, args)
-                self.ctx.forward(subcommand)
-            except UsageError as e:
-                print(e.format_message())
-        else:
-            return cmd.Cmd.default(self, line)
+    if switch.lower()=="on":
+        attrs["Light Control: On/Off"] = True
+    elif switch.lower() == "off":
+        attrs["Light Control: On/Off"] = False
 
+    if dimmer:
+        attrs["Light Control: Dimmer"] = dimmer
 
-@click.group(invoke_without_command=True)
-@click.pass_context
-def cli(ctx):
-    if ctx.invoked_subcommand is None:
-        repl = REPL(ctx)
-        repl.cmdloop()
+    print(attrs)
+    iotc.actuate(device_id, attrs)
 
 
 @cli.command()
-@click.option('--foo', required=True)
-def a(foo):
-    print("a")
-    print(foo)
-    # print(c)
-    return 'banana'
-
+def fixture():
+    """Runs Database fixture for use in example"""
+    clear.callback(True, True, True, True)
+    db_fixture.run()
 
 @cli.command()
-@click.option('--foo', required=True)
-def b(foo):
-    print("b")
-    print(foo)
-    c = "asdasdasd"
+@click.option('--images/--no-images', default=False, help='Remove Images', required=False)
+@click.option('--devices/--no-devices', default=False, help='Remove device', required=False)
+@click.option('--templates/--no-templates', default=False, help='Remove templates', required=False)
+@click.option('--all/--no-all', default=False, help='Clear Database', required=False)
+def clear(images, devices, templates, all):
+    """Clear database entries. --help for options"""
+    iotc = IotClient()
 
-if __name__ == "__main__":
+    if all:
+        iotc.clear_images()
+        iotc.clear_devices()
+        iotc.clear_templates()
+        return
+
+    if images:
+        iotc.clear_images()
+
+    if devices:
+        iotc.clear_devices()
+
+    if templates:
+        iotc.clear_templates()
+
+
+if __name__ == '__main__':
+
+    # device_id = iotc.get_device_id("ExampleFW", "1.0.0", "123456789")
+    # attrs = {
+    #     "Light Control: On/Off": True
+    # }
+    # iotc.actuate(device_id, attrs)
     cli()
+
+
+
+
+
+
+
+
+
+
