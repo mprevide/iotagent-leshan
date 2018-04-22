@@ -28,7 +28,7 @@ as a uni.
 Once a registration exists an incoming connection will be accepted and all *dynamic attributes*
 will be registered for notification.
 
-A minimal working dojot template is [provided](../client/lwm2m_base.json)
+A minimal working dojot template is [provided](../client/models/lwm2m_base.json)
 
  
 ### Object resource discovery

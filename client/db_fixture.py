@@ -8,9 +8,9 @@ def run():
     iotc.upload_image("example.hex", "lwm2m_base", "1.0.0")
     iotc.upload_image("example.hex", "lwm2m_base", "1.0.1")
 
-    base_template = load_template("lwm2m_base.json")
-    temp_sensor_template = load_template("3303.json")
-    light_bulb_template = load_template("3311.json")
+    base_template = load_template("models/lwm2m_base.json")
+    temp_sensor_template = load_template("models/3303.json")
+    light_bulb_template = load_template("models/3311.json")
 
     base_template_id = str(iotc.create_template(base_template))
     temp_sensor_template_id = str(iotc.create_template(temp_sensor_template))
