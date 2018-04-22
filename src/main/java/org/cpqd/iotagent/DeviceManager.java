@@ -199,12 +199,7 @@ public class DeviceManager {
     }
 
     public String getLabelFromPath(String path) {
-        Integer[] ids = DeviceAttribute.getIdsfromPath(path);
-        if (ids == null) {
-            return "";
-        }
-        return modelProvider.getObjectModel(null).getResourceModel(ids[0], ids[2]).name;
-
+        return paths2labels.get(path);
     }
 
     public Integer[] getPathFromLabel(String label) {
