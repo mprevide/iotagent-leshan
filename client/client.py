@@ -1,59 +1,53 @@
-#! /bin/usr/python3
+import click
+import cmd
+import sys
 
-from iotclient import IotClient, load_template
-from copy import deepcopy
-import json
-
-
-
-iotc = IotClient()
-
-iotc.upload_image("example.hex", "ExampleFW", "1.0.1")
-
-template1 = load_template("lwm2m_base.json")
-template2 = load_template("template1_0_1.json")
-temp_sensor_template = load_template("3303.json")
-light_bulb_template = load_template("3311.json")
-
-template1_id = str(iotc.create_template(template1))
-template2_id = str(iotc.create_template(template2))
-temp_sensor_template_id = str(iotc.create_template(temp_sensor_template))
-light_bulb_template_id = str(iotc.create_template(light_bulb_template))
-
-device_payload = {
-    "templates": [template1_id],
-    "label": "ExampleFW"
-}
-
-new_device_payload = {
-    "templates": [template2_id],
-    "label": "ExampleFW"
-}
-
-device_id = iotc.create_device(device_payload)
-iotc.update_device(device_id, new_device_payload)
-
-new_device_payload = {
-    # "templates": [template1_id, temp_sensor_template_id, light_bulb_template_id],
-    "templates": [template1_id, temp_sensor_template_id, light_bulb_template_id],
-    "label": "ExampleFW"
-}
+from click import BaseCommand, UsageError
 
 
-temp_dict = {val['label']:val for val in temp_sensor_template['attrs']}
-light_dict = {val['label']:val for val in light_bulb_template['attrs']}
+class REPL(cmd.Cmd):
+    def __init__(self, ctx):
+        cmd.Cmd.__init__(self)
+        self.ctx = ctx
 
-temp_set = set(temp_dict)
-light_set = set(light_dict)
+    def default(self, line):
+        subcommand = line.split()[0]
+        args = line.split()[1:]
+
+        subcommand = cli.commands.get(subcommand)
+        if subcommand:
+            try:
+                subcommand.parse_args(self.ctx, args)
+                self.ctx.forward(subcommand)
+            except UsageError as e:
+                print(e.format_message())
+        else:
+            return cmd.Cmd.default(self, line)
 
 
+@click.group(invoke_without_command=True)
+@click.pass_context
+def cli(ctx):
+    if ctx.invoked_subcommand is None:
+        repl = REPL(ctx)
+        repl.cmdloop()
 
 
-for name in temp_set.intersection(light_set):
-    print(name, temp_dict[name])
+@cli.command()
+@click.option('--foo', required=True)
+def a(foo):
+    print("a")
+    print(foo)
+    # print(c)
+    return 'banana'
 
-iotc.update_device(device_id, new_device_payload)
-# actuating_attr = {
-#         "luminosity": 10.6
-# }
-# iotc.actuate(actuating_attr)
+
+@cli.command()
+@click.option('--foo', required=True)
+def b(foo):
+    print("b")
+    print(foo)
+    c = "asdasdasd"
+
+if __name__ == "__main__":
+    cli()
