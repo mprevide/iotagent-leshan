@@ -37,7 +37,7 @@ public class DeviceManager {
     }
 
     ObjectModel UpdateModel(ObjectModel oldModel, LinkedList<ResourceModel> newResources){
-        Map<Integer, ResourceModel> jointModelResources = oldModel.resources;
+        HashMap<Integer, ResourceModel> jointModelResources = new HashMap<Integer, ResourceModel>(oldModel.resources);
 
         for(ResourceModel resource: newResources){
             jointModelResources.put(resource.id, resource);
