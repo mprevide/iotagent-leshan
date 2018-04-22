@@ -19,7 +19,7 @@ def gettype(op):
     if op == "R":
         return "static"
 
-def get_attribute(item, resource_id, resource_name):
+def get_attribute(item, resource_id, resource_name, instance_num):
     attr_id = item.attrib['ID']
     label = item.findall("Name")[0].text
     op = item.findall("Operations")[0].text
