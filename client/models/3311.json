@@ -1,116 +1,116 @@
 {
   "attrs": [
     {
+      "type": "actuator",
       "value_type": "boolean",
       "metadata": [
         {
           "type": "lwm2m",
-          "value_type": "string",
           "static_value": "/3311/0/5850",
+          "value_type": "string",
           "label": "oi"
         }
       ],
-      "type": "actuator",
-      "label": "Light Control: On/Off"
+      "label": "LightControl-On_Off-0"
     },
     {
+      "type": "actuator",
       "value_type": "integer",
       "metadata": [
         {
           "type": "lwm2m",
-          "value_type": "string",
           "static_value": "/3311/0/5851",
+          "value_type": "string",
           "label": "oi"
         },
         {
           "type": "meta",
-          "value_type": "string",
           "static_value": "%",
+          "value_type": "string",
           "label": "unit"
         }
       ],
-      "type": "actuator",
-      "label": "Light Control: Dimmer"
+      "label": "LightControl-Dimmer-0"
     },
     {
+      "type": "dynamic",
       "value_type": "integer",
       "metadata": [
         {
           "type": "lwm2m",
-          "value_type": "string",
           "static_value": "/3311/0/5852",
+          "value_type": "string",
           "label": "oi"
         },
         {
           "type": "meta",
-          "value_type": "string",
           "static_value": "sec",
+          "value_type": "string",
           "label": "unit"
         }
       ],
-      "type": "dynamic",
-      "label": "Light Control: On Time"
+      "label": "LightControl-OnTime-0"
     },
     {
+      "type": "dynamic",
       "value_type": "float",
-      "static_value": "",
       "metadata": [
         {
           "type": "lwm2m",
-          "value_type": "string",
           "static_value": "/3311/0/5805",
+          "value_type": "string",
           "label": "oi"
         },
         {
           "type": "meta",
-          "value_type": "string",
           "static_value": "Wh",
+          "value_type": "string",
           "label": "unit"
         }
       ],
-      "type": "dynamic",
-      "label": "Light Control: Cumulative active power"
+      "label": "LightControl-Cumulativeactivepower-0",
+      "static_value": ""
     },
     {
+      "type": "static",
       "value_type": "float",
-      "static_value": "",
       "metadata": [
         {
           "type": "lwm2m",
-          "value_type": "string",
           "static_value": "/3311/0/5820",
+          "value_type": "string",
           "label": "oi"
         }
       ],
-      "type": "static",
-      "label": "Light Control: Power Factor"
+      "label": "LightControl-PowerFactor-0",
+      "static_value": ""
     },
     {
-      "value_type": "string",
-      "metadata": [
-        {
-          "type": "lwm2m",
-          "value_type": "string",
-          "static_value": "/3311/0/5706",
-          "label": "oi"
-        }
-      ],
       "type": "actuator",
-      "label": "Light Control: Colour"
-    },
-    {
       "value_type": "string",
-      "static_value": "",
       "metadata": [
         {
           "type": "lwm2m",
+          "static_value": "/3311/0/5706",
           "value_type": "string",
-          "static_value": "/3311/0/5701",
           "label": "oi"
         }
       ],
+      "label": "LightControl-Colour-0"
+    },
+    {
       "type": "static",
-      "label": "Light Control: Sensor Units"
+      "value_type": "string",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "static_value": "/3311/0/5701",
+          "value_type": "string",
+          "label": "oi"
+        }
+      ],
+      "label": "LightControl-SensorUnits-0",
+      "static_value": ""
     }
   ],
   "label": "Light Control"
