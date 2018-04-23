@@ -96,3 +96,30 @@ class IotClient(object):
         }
         base_url = 'http://localhost:8000/device/'
         r = requests.put(base_url + device_id + '/actuate', json=actuate_payload, headers=self.headers)
+
+
+    def clear_images(self):
+        base_url = 'http://localhost:8000/fw-image/image'
+        r = requests.get(base_url, headers=self.headers)
+        response = json.loads(r.text)
+        for image in response:
+            r = requests.delete(base_url+ "/"+image['id'], headers=self.headers)
+
+
+
+    def clear_devices(self):
+        base_url = 'http://localhost:8000/device'
+        r = requests.get(base_url, headers=self.headers)
+        response = json.loads(r.text)
+        for device in response['devices']:
+            url = base_url + "/" + device['id']
+            r = requests.delete(url, headers=self.headers)
+
+
+    def clear_templates(self):
+        base_url = 'http://localhost:8000/template'
+        r = requests.get(base_url, headers=self.headers)
+        response = json.loads(r.text)
+        for template in response['templates']:
+            url = base_url + "/" + str(template['id'])
+            r = requests.delete(url, headers=self.headers)

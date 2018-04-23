@@ -11,7 +11,7 @@ For starters, while dojot's device registration is a role of the user,
 in LwM2M the connection is initiated by the device.
 
 To accomodate these diferences a minimum configuration is expected of each device.
-It should provide resources 3/0/1 and 3/0/2, and use the following [template](client/lwm2m_base.json):
+It should provide resources 3/0/1 and 3/0/2, and use the following [template](client/models/lwm2m_base.json):
 
 A fuller explanation is available at the [modeling](./docs/modeling.md) docs.
 
@@ -30,9 +30,9 @@ it should already contain this service:
     git checkout X.X.X
     docker-compose up -d
 
-We also provide a full example to run it yourself [here](./docs/running.md).
+We also provide a full example to run it yourself [here](./docs/running.md) along with a
+client [library](./client/iotclient.py) and [cli](./client/client.py).
 
-Also check out some use cases [here](./docs/usage.md)
 
 
    

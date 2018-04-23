@@ -1,59 +1,81 @@
-#! /bin/usr/python3
+import click
+from iotclient import IotClient
+import db_fixture
 
-from iotclient import IotClient, load_template
-from copy import deepcopy
-import json
+@click.group()
+def cli():
+    pass
 
+@cli.command()
+@click.option('--switch', help='[ON/OFF]', type=str)
+@click.option('--dimmer', help='% value', type=int)
+def actuate(switch, dimmer):
+    """Actuation commands for example"""
 
+    iotc = IotClient()
+    device_id = iotc.get_device_id("ExampleFW", "123456789")
 
-iotc = IotClient()
+    print(iotc)
+    attrs = {}
 
-iotc.upload_image("example.hex", "ExampleFW", "1.0.1")
+    if switch.lower()=="on":
+        attrs["Light Control: On/Off"] = True
+    elif switch.lower() == "off":
+        attrs["Light Control: On/Off"] = False
 
-template1 = load_template("lwm2m_base.json")
-template2 = load_template("template1_0_1.json")
-temp_sensor_template = load_template("3303.json")
-light_bulb_template = load_template("3311.json")
+    if dimmer:
+        attrs["Light Control: Dimmer"] = dimmer
 
-template1_id = str(iotc.create_template(template1))
-template2_id = str(iotc.create_template(template2))
-temp_sensor_template_id = str(iotc.create_template(temp_sensor_template))
-light_bulb_template_id = str(iotc.create_template(light_bulb_template))
-
-device_payload = {
-    "templates": [template1_id],
-    "label": "ExampleFW"
-}
-
-new_device_payload = {
-    "templates": [template2_id],
-    "label": "ExampleFW"
-}
-
-device_id = iotc.create_device(device_payload)
-iotc.update_device(device_id, new_device_payload)
-
-new_device_payload = {
-    # "templates": [template1_id, temp_sensor_template_id, light_bulb_template_id],
-    "templates": [template1_id, temp_sensor_template_id, light_bulb_template_id],
-    "label": "ExampleFW"
-}
+    print(attrs)
+    iotc.actuate(device_id, attrs)
 
 
-temp_dict = {val['label']:val for val in temp_sensor_template['attrs']}
-light_dict = {val['label']:val for val in light_bulb_template['attrs']}
+@cli.command()
+def fixture():
+    """Runs Database fixture for use in example"""
+    clear.callback(True, True, True, True)
+    db_fixture.run()
 
-temp_set = set(temp_dict)
-light_set = set(light_dict)
+@cli.command()
+@click.option('--images/--no-images', default=False, help='Remove Images', required=False)
+@click.option('--devices/--no-devices', default=False, help='Remove device', required=False)
+@click.option('--templates/--no-templates', default=False, help='Remove templates', required=False)
+@click.option('--all/--no-all', default=False, help='Clear Database', required=False)
+def clear(images, devices, templates, all):
+    """Clear database entries. --help for options"""
+    iotc = IotClient()
+
+    if all:
+        iotc.clear_images()
+        iotc.clear_devices()
+        iotc.clear_templates()
+        return
+
+    if images:
+        iotc.clear_images()
+
+    if devices:
+        iotc.clear_devices()
+
+    if templates:
+        iotc.clear_templates()
+
+
+if __name__ == '__main__':
+
+    # device_id = iotc.get_device_id("ExampleFW", "1.0.0", "123456789")
+    # attrs = {
+    #     "Light Control: On/Off": True
+    # }
+    # iotc.actuate(device_id, attrs)
+    cli()
 
 
 
 
-for name in temp_set.intersection(light_set):
-    print(name, temp_dict[name])
 
-iotc.update_device(device_id, new_device_payload)
-# actuating_attr = {
-#         "luminosity": 10.6
-# }
-# iotc.actuate(actuating_attr)
+
+
+
+
+

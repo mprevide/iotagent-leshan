@@ -33,7 +33,7 @@ After generating the output file, perform these steps:
 # Example
     
     cd client
-    python3 oma2template.py -i 3311.xml -o 3311_preedit.json
+    python3 oma2template.py -i models/3311.xml -o models/3311_preedit.json
     # You can use your preference difftool instead of meld
-    meld 3311_preedit.json 3311_postedit.json
+    meld models/3311_preedit.json models/3311.json
     
