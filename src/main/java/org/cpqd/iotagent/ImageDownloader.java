@@ -36,7 +36,7 @@ public class ImageDownloader {
 
     public String ImageUrl(String service, String imageLabel, String version) {
         // TODO(jsiloto): Sanity check and return empty
-        String imageID = FetchImage("admin", imageLabel, version);
+        String imageID = FetchImage(service, imageLabel, version);
         String fileserverUrl = "coap://[2001:db8::2]:5693/data/";
         String fileUrl = fileserverUrl + imageID + ".hex";
         return fileUrl;

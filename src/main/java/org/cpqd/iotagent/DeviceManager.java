@@ -29,6 +29,7 @@ public class DeviceManager {
     private BiMap<String, String> paths2labels = HashBiMap.create();
     private Map<String, Registration> Devices = new HashMap<String, Registration>();
     private Map<String, String> Lwm2mDevices = new HashMap<String, String>();
+    private Map<String, String> deviceService = new HashMap<String, String>();
 
 
 
@@ -176,6 +177,11 @@ public class DeviceManager {
     public Integer[] getPathFromLabel(String label) {
         String path = paths2labels.inverse().get(label);
         return DeviceAttribute.getIdsfromPath(path);
+    }
+
+    public String getDeviceService(String deviceId){
+        // TODO(jsiloto): implement deviceService populate mechanism
+        return deviceService.get(deviceId);
     }
 
 
