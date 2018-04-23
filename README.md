@@ -30,9 +30,9 @@ it should already contain this service:
     git checkout X.X.X
     docker-compose up -d
 
-We also provide a full example to run it yourself [here](./docs/running.md).
+We also provide a full example to run it yourself [here](./docs/running.md) along with a
+client [library](./client/iotclient.py) and [cli](./client/client.py).
 
-Also check out some use cases [here](./docs/usage.md)
 
 
    

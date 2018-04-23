@@ -38,7 +38,7 @@ Build the iotagent and populate the database
     # Run Database Fixture for this example
     cd client
     pip3 install --user -r requirements.txt
-    python3 db_fixture.py
+    python3 client.py fixture
     
     # Build and Run IoTAgent
     cd iotagent-leshan
