@@ -64,7 +64,7 @@ template = gettemplate(root)
 pprint(template)
 
 with open(options.output_file, "w+") as f:
-    json.dump(template, f)
+    json.dump(template, f, indent=2, separators=(',', ': '))
 
 # print(xmldoc.getElementsByTagName('Name'))
 #
