@@ -16,8 +16,10 @@ post-script manual editing is needed
       -h, --help            show this help message and exit
       -i FILE, --input=FILE
                             input xml file
+      -m N, --multiple=N    number of instances of same object
       -o FILE, --output=FILE
                             output json file
+
 
 # Post-Script Editing
 

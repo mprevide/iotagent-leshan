@@ -16,9 +16,7 @@ import org.eclipse.leshan.server.registration.Registration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 public class DeviceManager {
     private Logger mLogger = Logger.getLogger(DeviceManager.class);
@@ -39,6 +37,22 @@ public class DeviceManager {
         this.modelProvider = modelProvider;
     }
 
+    ObjectModel UpdateModel(ObjectModel oldModel, LinkedList<ResourceModel> newResources){
+        HashMap<Integer, ResourceModel> jointModelResources = new HashMap<Integer, ResourceModel>(oldModel.resources);
+
+        for(ResourceModel resource: newResources){
+            jointModelResources.put(resource.id, resource);
+        }
+        jointModelResources.putAll(oldModel.resources);
+
+
+        ObjectModel jointModel = new ObjectModel(oldModel.id, oldModel.name, oldModel.description, oldModel.version,
+                oldModel.multiple,oldModel.mandatory, new ArrayList<>(jointModelResources.values()));
+
+        return jointModel;
+    }
+
+
 
     public void RegisterModel(Device device) {
         Map<Integer, LinkedList<ResourceModel>> newModels = new HashMap<Integer, LinkedList<ResourceModel>>();
@@ -46,38 +60,58 @@ public class DeviceManager {
 
         String deviceLabel = device.label;
 
-        // Get all ResourceModels for each attribute
+        // Generate a map with new Object models
         for (DeviceAttribute attr : device.attributes) {
             if (attr.isLwm2mAttr()) {
+                paths2labels.put(attr.path, attr.label);
                 ResourceModel attrModel = attr.getLwm2mResourceModel();
                 int objectId = attr.getLwm2mPath()[0];
+
+                // If object model does not exist in map initialize
                 if (!newModels.containsKey(objectId)) {
                     newModels.put(objectId, new LinkedList<ResourceModel>());
                 }
+
                 newModels.get(objectId).add(attr.getLwm2mResourceModel());
             }
         }
 
+
         // TODO(jsiloto): Should models be updated everytime?
         // Iterate over discovered models, add if not already in the provider
-        for (Map.Entry<Integer, LinkedList<ResourceModel>> entry : newModels.entrySet()) {
-            Integer objectId = entry.getKey();
+        for (Map.Entry<Integer, LinkedList<ResourceModel>> resourceList : newModels.entrySet()) {
+            Integer objectId = resourceList.getKey();
             LwM2mModel model = modelProvider.getObjectModel(null);
             ObjectModel oldModel = model.getObjectModel(objectId);
-            //TODO(jsiloto): Can't we just update the model with new attributes?
+
+            ObjectModel objectModel;
+
             if (oldModel == null) {
-                ObjectModel objectModel = new ObjectModel(objectId, deviceLabel,
-                        "", "1", false, false, entry.getValue());
-
-                for(ResourceModel resource: entry.getValue()){
-                    String label = resource.name;
-                    Integer resourceId = resource.id;
-                    String path = objectId.toString() +"/0/"+resourceId.toString();
-                    paths2labels.put(path, label);
-                }
-
-                modelProvider.addObjectModel(objectModel);
+                objectModel = new ObjectModel(objectId, deviceLabel,
+                        "", "1", true, false, resourceList.getValue());
             }
+            else{
+                objectModel = UpdateModel(oldModel, resourceList.getValue());
+            }
+
+            modelProvider.addObjectModel(objectModel);
+
+
+
+//            //TODO(jsiloto): Can't we just update the model with new attributes?
+//            if (oldModel == null) {
+//                ObjectModel objectModel = new ObjectModel(objectId, deviceLabel,
+//                        "", "1", false, false, resourceList.getValue());
+//
+//                for(ResourceModel resource: resourceList.getValue()){
+//                    String label = resource.name;
+//                    Integer resourceId = resource.id;
+//                    String path = objectId.toString() +"/0/"+resourceId.toString();
+//                    paths2labels.put(path, label);
+//                }
+//
+//                modelProvider.addObjectModel(objectModel);
+//            }
         }
     }
 
@@ -166,12 +200,7 @@ public class DeviceManager {
     }
 
     public String getLabelFromPath(String path) {
-        Integer[] ids = DeviceAttribute.getIdsfromPath(path);
-        if (ids == null) {
-            return "";
-        }
-        return modelProvider.getObjectModel(null).getResourceModel(ids[0], ids[2]).name;
-
+        return paths2labels.get(path);
     }
 
     public Integer[] getPathFromLabel(String label) {
