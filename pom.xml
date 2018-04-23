@@ -124,7 +124,7 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.californium</groupId>
-            <artifactId>cf-simplefile-server</artifactId>
+            <artifactId>californium-core</artifactId>
             <version>2.0.0-M6</version>
         </dependency>
     </dependencies>
