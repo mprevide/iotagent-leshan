@@ -2,257 +2,257 @@
   "label": "Temperature",
   "attrs": [
     {
-      "label": "Temperature: Sensor Value: 0",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/0/5700",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "dynamic",
+      "label": "Temperature-SensorValue-0",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Sensor Value: 1",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/1/5700",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "dynamic",
+      "label": "Temperature-SensorValue-1",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Min Measured Value: 0",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/0/5601",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-MinMeasuredValue-0",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Min Measured Value: 1",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/1/5601",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-MinMeasuredValue-1",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Max Measured Value: 0",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/0/5602",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-MaxMeasuredValue-0",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Max Measured Value: 1",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/1/5602",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-MaxMeasuredValue-1",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Min Range Value: 0",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/0/5603",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-MinRangeValue-0",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Min Range Value: 1",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/1/5603",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-MinRangeValue-1",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Max Range Value: 0",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/0/5604",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-MaxRangeValue-0",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Max Range Value: 1",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/1/5604",
-          "type": "lwm2m",
           "value_type": "string"
         },
         {
+          "type": "meta",
           "label": "unit",
           "static_value": "Defined by \u201cUnits\u201d resource.",
-          "type": "meta",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-MaxRangeValue-1",
       "value_type": "float",
       "static_value": ""
     },
     {
-      "label": "Temperature: Sensor Units: 0",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/0/5701",
-          "type": "lwm2m",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-SensorUnits-0",
       "value_type": "string",
       "static_value": ""
     },
     {
-      "label": "Temperature: Sensor Units: 1",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/1/5701",
-          "type": "lwm2m",
           "value_type": "string"
         }
       ],
       "type": "static",
+      "label": "Temperature-SensorUnits-1",
       "value_type": "string",
       "static_value": ""
     },
     {
-      "label": "Temperature: Reset Min and Max Measured Values: 0",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/0/5605",
-          "type": "lwm2m",
           "value_type": "string"
         }
       ],
       "type": "actuator",
+      "label": "Temperature-ResetMinandMaxMeasuredValues-0",
       "value_type": "string"
     },
     {
-      "label": "Temperature: Reset Min and Max Measured Values: 1",
       "metadata": [
         {
+          "type": "lwm2m",
           "label": "oi",
           "static_value": "/3303/1/5605",
-          "type": "lwm2m",
           "value_type": "string"
         }
       ],
       "type": "actuator",
+      "label": "Temperature-ResetMinandMaxMeasuredValues-1",
       "value_type": "string"
     }
   ]

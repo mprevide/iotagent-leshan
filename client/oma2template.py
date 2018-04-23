@@ -26,7 +26,7 @@ def get_attribute(item, resource_id, resource_name, instance_num):
     attr_type = item.findall("Type")[0].text
     units = item.findall("Units")[0].text
     attr = {
-        "label": "{}: {}: {}".format(resource_name, label, instance_num),
+        "label": "{} - {} - {}".format(resource_name, label, instance_num).replace(" ", "").replace("/","_"),
         "type" : gettype(op),
         "value_type": attr_type.lower(),
         "metadata": [

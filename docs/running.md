@@ -22,17 +22,15 @@ Bring up the dojot environment:
     # On Terminal #1 
     # Clone and bring up the dojot infrastructure with docker compose
     # Be aware this may take a few minutes (or hours depending on your connection)
-    git clone git@github.com:dojot/docker-compose.git
+    git clone git@github.com:dojot-nightly/docker-compose.git
     cd docker-compose
-    git checkout 0.2.0
+    git checkout 0.3.0-nightly20180419
     docker-compose up -d
 
 Build the iotagent and populate the database
     
     # On Terminal #2
-    git clone --recursive https://github.com/jsiloto/iotagent-leshan
-    # if you forgot to clone recursively run:
-    # git submodule update --init
+    git clone https://github.com/jsiloto/iotagent-leshan
     cd iotagent
     
     # Run Database Fixture for this example

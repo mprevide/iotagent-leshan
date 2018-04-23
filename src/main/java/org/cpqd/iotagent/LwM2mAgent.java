@@ -182,7 +182,7 @@ public class LwM2mAgent implements Runnable {
     private Integer on_remove(JSONObject message) {
         mLogger.debug("on_remove: " + message.toString());
         JsonObject o = new JsonParser().parse(message.toString()).getAsJsonObject();
-        String deviceId = o.get("id").getAsString();
+        String deviceId = o.get("data").getAsJsonObject().get("id").getAsString();
         Registration registration = deviceManager.getDeviceRegistration(deviceId);
         deviceManager.DeregisterDevice(registration.getId());
         return 0;

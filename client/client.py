@@ -19,12 +19,12 @@ def actuate(switch, dimmer):
     attrs = {}
 
     if switch.lower()=="on":
-        attrs["Light Control: On/Off"] = True
+        attrs["LightControl-On_Off-0"] = True
     elif switch.lower() == "off":
-        attrs["Light Control: On/Off"] = False
+        attrs["LightControl-On_Off-0"] = False
 
     if dimmer:
-        attrs["Light Control: Dimmer"] = dimmer
+        attrs["LightControl-Dimmer-0"] = dimmer
 
     print(attrs)
     iotc.actuate(device_id, attrs)
