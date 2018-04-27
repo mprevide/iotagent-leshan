@@ -4,6 +4,9 @@ fw/
 *.pyc
 .idea*
 data/
+.classpath
+.project
+.settings/
 
 # ignores Eclipse IDE related files
 .classpath
