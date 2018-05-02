@@ -5,7 +5,10 @@ fw/
 .idea*
 data/
 
-
+# ignores Eclipse IDE related files
+.classpath
+.project
+.settings/
 
 # Created by https://www.gitignore.io/api/java,intellij
 
