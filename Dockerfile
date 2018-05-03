@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 RUN ["mvn", "dependency:resolve"]
 RUN ["mvn", "verify"]
 
-ADD Californium.properties /usr/src/app/Californium.properties
+ADD fileServerCoAP.properties /usr/src/app/fileServerCoAP.properties
 ADD src /usr/src/app/src
 RUN ["mvn", "package"]
 
