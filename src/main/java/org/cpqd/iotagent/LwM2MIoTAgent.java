@@ -18,7 +18,7 @@ public class LwM2MIoTAgent {
         String imageManagerUrl = "http://image-manager:5000";
         String deviceManagerUrl = "http://device-manager:5000";
         
-        //TODO(rauln): share the securityStore with the agent
+        // we need to share the securityStore with the agent
         LwM2mAgent agent = new LwM2mAgent(deviceManagerUrl, imageManagerUrl);
 
         File coapConfigFile = new File(new String("fileServerCoAP.properties"));
@@ -26,7 +26,7 @@ public class LwM2MIoTAgent {
         SimpleFileServer fileServer = new SimpleFileServer(coapConfigFile, securityStore);
         
         fileServer.start();
-        //TODO(rauln): we need to share the path with the ImageDownloader
+        // we need to share the path with the ImageDownloader
         fileServer.addNewResource(new String("data"), new File(new String("data")));
         (new Thread(agent)).start();
 
