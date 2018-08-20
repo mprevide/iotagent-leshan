@@ -14,18 +14,17 @@
  *    Bosch Software Innovations GmbH - initial creation
  *                                      derived from HelloWorldServer example
  *    Bosch Software Innovations GmbH - migrate to SLF4J
+ *    Dojot developers team           - removed the main method and transformed
+ *                                      it into a class
  ******************************************************************************/
-package org.eclipse.californium.examples;
+
+package org.cpqd.iotagent;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapServer;
@@ -34,86 +33,41 @@ import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.network.CoapEndpoint;
-import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.network.Exchange;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
+import org.eclipse.californium.scandium.DTLSConnector;
+import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
+import org.eclipse.californium.scandium.dtls.pskstore.PskStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimpleFileServer extends CoapServer {
 	private static final Logger LOG = LoggerFactory.getLogger(SimpleFileServer.class.getName());
 
-	private static final int COAP_PORT = NetworkConfig.getStandard().getInt(NetworkConfig.Keys.COAP_PORT);
-	private static final String DEFAULT_PATH = "data";
+	public SimpleFileServer(File coapConfigFile, PskStore pskStore) {
+		NetworkConfig.createStandardWithFile(coapConfigFile);
+		
+		int coapPort = NetworkConfig.getStandard().getInt(NetworkConfig.Keys.COAP_PORT);
+		int secureCoapPort = NetworkConfig.getStandard().getInt(NetworkConfig.Keys.COAP_SECURE_PORT);
+		
+		DtlsConnectorConfig.Builder config = new DtlsConnectorConfig.Builder();		
+		config.setAddress(new InetSocketAddress(secureCoapPort));
+		config.setPskStore(pskStore);
 
-	/*
-	 * Application entry point.
-	 */
-	public static void main(String[] args) {
-
-		try {
-			String filesRootPath = DEFAULT_PATH;
-			String coapRootPath = DEFAULT_PATH;
-
-			switch (args.length) {
-			case 2:
-				coapRootPath = args[1];
-				if (0 <= coapRootPath.indexOf('/')) {
-					LOG.error("{} don't use '/'! Only one path segement for coap root allowed!",
-							coapRootPath);
-					return;
-				}
-			case 1:
-				filesRootPath = args[0];
-				break;
-			}
-
-			File filesRoot = new File(filesRootPath);
-			if (!filesRoot.exists()) {
-				LOG.error("{} doesn't exists!", filesRoot.getAbsolutePath());
-				return;
-			} else if (!filesRoot.isDirectory()) {
-				LOG.error("{} is no directory!", filesRoot.getAbsolutePath());
-				return;
-			}
-
-			File[] files = filesRoot.listFiles();
-			for (File file : files) {
-				if (file.isFile() && file.canRead()) {
-					LOG.info("GET: coap://<host>/{}/{}", new Object[] { coapRootPath, file.getName() });
-					break;
-				}
-			}
-			// create server
-			SimpleFileServer server = new SimpleFileServer(coapRootPath, filesRoot);
-			// add endpoints on all IP addresses
-			server.addEndpoints();
-			server.start();
-
-		} catch (SocketException e) {
-			LOG.error("Failed to initialize server: ", e);
-		}
+		DTLSConnector connector = new DTLSConnector(config.build());
+		this.addEndpoint(new CoapEndpoint(connector, NetworkConfig.getStandard()));
+		
+		InetSocketAddress bindToAddress = new InetSocketAddress(coapPort);
+		this.addEndpoint(new CoapEndpoint(bindToAddress));
+		
 	}
-
-	/**
-	 * Add individual endpoints listening on default CoAP port on all IPv4
-	 * addresses of all network interfaces.
-	 */
-	private void addEndpoints() {
-		for (InetAddress addr : EndpointManager.getEndpointManager().getNetworkInterfaces()) {
-			InetSocketAddress bindToAddress = new InetSocketAddress(addr, COAP_PORT);
-			addEndpoint(new CoapEndpoint(bindToAddress));
-		}
-	}
-
-	/*
-	 * Constructor for a new simple file server. Here, the resources of the
-	 * server are initialized.
-	 */
-	public SimpleFileServer(String coapRootPath, File filesRoot) throws SocketException {
+	
+	public void addNewResource(String coapRootPath, File filesRoot) {
 		add(new FileResource(coapRootPath, filesRoot));
 	}
-
+	
 	class FileResource extends CoapResource {
 		/**
 		 * Files root directory.
@@ -246,5 +200,5 @@ public class SimpleFileServer extends CoapServer {
 			}
 		}
 	}
-
+	
 }

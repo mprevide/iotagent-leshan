@@ -1,11 +1,9 @@
 package org.cpqd.iotagent;
-import org.apache.log4j.Logger;
-import org.eclipse.californium.examples.SimpleFileServer;
 
 import java.io.File;
-import java.net.SocketException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
+
+import org.apache.log4j.Logger;
+import org.eclipse.californium.scandium.dtls.pskstore.InMemoryPskStore;
 
 
 public class LwM2MIoTAgent {
@@ -14,16 +12,22 @@ public class LwM2MIoTAgent {
         Logger logger = Logger.getLogger(LwM2MIoTAgent.class);
 
         logger.info("Starting LwM2M IoTAgent...");
+        
+        InMemoryPskStore securityStore = new InMemoryPskStore();
 
         String imageManagerUrl = "http://image-manager:5000";
         String deviceManagerUrl = "http://device-manager:5000";
-
+        
+        // we need to share the securityStore with the agent
         LwM2mAgent agent = new LwM2mAgent(deviceManagerUrl, imageManagerUrl);
 
-        String[] fileArgs = {};
-        SimpleFileServer.main(fileArgs);
+        File coapConfigFile = new File(new String("fileServerCoAP.properties"));
 
-
+        SimpleFileServer fileServer = new SimpleFileServer(coapConfigFile, securityStore);
+        
+        fileServer.start();
+        // we need to share the path with the ImageDownloader
+        fileServer.addNewResource(new String("data"), new File(new String("data")));
         (new Thread(agent)).start();
 
         while (true) {
