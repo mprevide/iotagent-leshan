@@ -75,10 +75,10 @@ class IotClient(object):
 
     def create_device(self, device_payload):
         base_url = 'http://localhost:8000/device'
-        r = requests.post(base_url, json=device_payload, headers=self.headers, params={'verbose': True})
+        r = requests.post(base_url, json=device_payload, headers=self.headers, params={'verbose': False})
         response = json.loads(r.text)
         # device = response['devices'][0]
-        device_id = response['device']['id']
+        device_id = response['devices'][0]['id']
         return device_id
 
     def update_device(self, device_id, device_payload):
