@@ -59,11 +59,11 @@ public class LwM2mAgent implements Runnable {
         // Define model provider
         List<ObjectModel> models = ObjectLoader.loadDefault();
         models.addAll(ObjectLoader.loadDdfResources("/models/", modelPaths));
-        DinamicModelProvider dynamDinamicModelProvider = new DinamicModelProvider(models);
+        DynamicModelProvider dynamicModelProvider = new DynamicModelProvider(models);
 
-        modelProvider = dynamDinamicModelProvider;
+        modelProvider = dynamicModelProvider;
         imageDownloader = new ImageDownloader(imageManagerUrl);
-        deviceManager = new DeviceManager(deviceManagerUrl, dynamDinamicModelProvider);
+        deviceManager = new DeviceManager(deviceManagerUrl, dynamicModelProvider);
 
         this.mIotaManager.addCallback("create", this::on_create);
         this.mIotaManager.addCallback("update", this::on_update);
