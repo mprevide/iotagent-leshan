@@ -394,7 +394,7 @@ public class LwM2MAgent implements Runnable {
                     String imageVersion = attrs.getString(targetAttr);
                     String imageLabel = devAttr.getTemplateId();
                     logger.info("Image id that came on actuation: " + imageVersion);
-                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, false);
+                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, device.isSecure());
                     return 0; 
                 }
 
