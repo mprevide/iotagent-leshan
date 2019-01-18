@@ -27,6 +27,7 @@ import org.eclipse.leshan.server.registration.RegistrationListener;
 import org.eclipse.leshan.server.registration.RegistrationUpdate;
 import org.eclipse.leshan.server.security.NonUniqueSecurityInfoException;
 import org.eclipse.leshan.server.security.SecurityInfo;
+import org.eclipse.californium.scandium.dtls.pskstore.InMemoryPskStore;
 import org.eclipse.leshan.util.Hex;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -44,15 +45,17 @@ public class LwM2MAgent implements Runnable {
     private LeshanServer server;
     private Manager eventHandler;
     private InMemorySecurityStore securityStore;
+    private InMemoryPskStore fsPskStore;
 
 
-    public LwM2MAgent(ImageDownloader imageDownloader) {
+    public LwM2MAgent(ImageDownloader imageDownloader, InMemoryPskStore pskStore) {
         this.eventHandler = new Manager();
         this.deviceMapper = new DeviceMapper();
 
         this.securityStore = new InMemorySecurityStore();
 
         this.imageDownloader = imageDownloader;
+        this.fsPskStore = pskStore;
 
         // register the callbacks to treat the events
         this.eventHandler.addCallback("create", this::on_create);
@@ -101,6 +104,10 @@ public class LwM2MAgent implements Runnable {
 
         logger.debug("Bootstrap iotagent leshan: finished");
         return true;
+    }
+
+    public void setKeyPskStore(String keyId, String psk){
+        this.fsPskStore.setKey(keyId, psk.getBytes());
     }
 
     /**

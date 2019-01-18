@@ -38,8 +38,7 @@ public class LwM2MIoTAgent {
             "http://" + dojotConfig.getImageManagerAddress(), dataDir,
             fileServerAddress, coapPort, secureCoapPort);
         
-        // we need to share the securityStore with the agent
-        LwM2MAgent agent = new LwM2MAgent(imageDownloader);
+        LwM2MAgent agent = new LwM2MAgent(imageDownloader, securityStore);
 
         boolean bootstraped = agent.bootstrap();
         if (!bootstraped) {
