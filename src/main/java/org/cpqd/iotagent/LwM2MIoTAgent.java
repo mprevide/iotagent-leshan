@@ -5,7 +5,7 @@ import java.io.File;
 import org.apache.log4j.Logger;
 import org.cpqd.iotagent.LwM2MAgent;
 import org.eclipse.californium.core.network.config.NetworkConfig;
-import org.eclipse.californium.scandium.dtls.pskstore.InMemoryPskStore;
+import org.cpqd.iotagent.FileServerPskStore;
 import org.cpqd.iotagent.ImageDownloader;
 import br.com.dojot.config.Config;
 
@@ -15,7 +15,7 @@ public class LwM2MIoTAgent {
         Logger logger = Logger.getLogger(LwM2MIoTAgent.class);
         logger.info("Starting LwM2M IoTAgent...");
 
-        InMemoryPskStore securityStore = new InMemoryPskStore();
+        FileServerPskStore securityStore = new FileServerPskStore();
 
         File coapConfigFile = new File(new String("fileServerCoAP.properties"));
 
