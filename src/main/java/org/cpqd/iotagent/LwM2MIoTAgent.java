@@ -7,7 +7,7 @@ import org.cpqd.iotagent.LwM2MAgent;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.cpqd.iotagent.FileServerPskStore;
 import org.cpqd.iotagent.ImageDownloader;
-import br.com.dojot.config.Config;
+import com.cpqd.app.config.Config;
 
 public class LwM2MIoTAgent {
 
@@ -37,8 +37,10 @@ public class LwM2MIoTAgent {
         ImageDownloader imageDownloader = new ImageDownloader(
             "http://" + dojotConfig.getImageManagerAddress(), dataDir,
             fileServerAddress, coapPort, secureCoapPort);
+
+        Long consumerPollTime = dojotConfig.getKafkaDefaultConsumerPollTime();
         
-        LwM2MAgent agent = new LwM2MAgent(imageDownloader, securityStore);
+        LwM2MAgent agent = new LwM2MAgent(consumerPollTime, imageDownloader, securityStore);
 
         boolean bootstraped = agent.bootstrap();
         if (!bootstraped) {

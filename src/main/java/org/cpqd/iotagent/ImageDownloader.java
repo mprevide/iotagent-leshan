@@ -12,6 +12,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import com.cpqd.app.auth.Auth;
 
 /**
  * This class abstracts everything related to the image-manager,
@@ -62,7 +63,7 @@ public class ImageDownloader {
         String imageId = null;
         this.mLogger.debug("Fetching image with label: " + imageLabel + " at version " + version);
         try {
-            String token = TenancyManager.GetJwtToken(tenant);
+            String token = Auth.getInstance().getToken(tenant);
             imageId = this.getImageId(imageLabel, version, token);
             this.downloadImage(imageId, tenant + "-" + imageId + IMAGE_EXTENSION, token);
         } catch (Exception e) {
