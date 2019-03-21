@@ -12,8 +12,10 @@ import org.eclipse.leshan.core.request.ExecuteRequest;
 import org.eclipse.leshan.core.request.ObserveRequest;
 import org.apache.log4j.Logger;
 import org.eclipse.leshan.core.request.WriteRequest;
+import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.response.ObserveResponse;
 import org.eclipse.leshan.core.response.WriteResponse;
+import org.eclipse.leshan.core.node.LwM2mSingleResource;
 import org.eclipse.leshan.server.LwM2mServer;
 import org.eclipse.leshan.server.registration.Registration;
 
@@ -30,15 +32,33 @@ public class LwM2mHandler {
         this.server = server;
     }
 
-    public void ObserveResource(Registration registration, String path) {
+    public LwM2mSingleResource ObserveResource(Registration registration, String path) {
+        LwM2mSingleResource resource = null;
         try {
-        	Integer pathArray[] = DeviceAttribute.getIdsfromPath(path);
-            ObserveResponse response = server.send(registration, new ObserveRequest(pathArray[0], pathArray[1], pathArray[2]), readTimout);
+            Integer pathArray[] = DeviceAttribute.getIdsfromPath(path);
+            ObserveResponse response = server.send(registration, 
+                new ObserveRequest(pathArray[0], pathArray[1], pathArray[2]), readTimout);
+            if (response == null) {
+                this.mLogger.error("observe request timed out");
+                return null;
+            }
+            if (!response.isSuccess()) {
+                this.mLogger.error("Observe request failed. Error: " + 
+                    response.toString());
+                return null;
+            }
+            LwM2mNode lwm2mNode = response.getContent();
+            if (!(lwm2mNode instanceof LwM2mSingleResource)) {
+                this.mLogger.warn("Unsuported content object.");
+                return null;
+            }
+            resource = (LwM2mSingleResource)lwm2mNode;
         } catch (Exception e) {
             // Todo(jsiloto): Log errors here
             e.printStackTrace();
             mLogger.error(e);
         }
+        return resource;
     }
     
     public void CancelAllObservations(Registration registration) {

@@ -105,6 +105,88 @@ public class LwM2MAgent implements Runnable {
     	return true;
     }
 
+    private JSONObject transformLwm2mResourceValueIntoJson(DeviceAttribute attr, LwM2mSingleResource resource) throws Exception {
+        JSONObject attrJson = new JSONObject();
+        String valueType = attr.getValueType();
+        
+        switch (resource.getType()) {
+            case BOOLEAN:
+                attrJson.put(attr.getLabel(), (Boolean)resource.getValue());
+                break;
+            case FLOAT:
+                attrJson.put(attr.getLabel(), (Double)resource.getValue());
+                break;
+            case INTEGER:
+                attrJson.put(attr.getLabel(), (Long)resource.getValue());
+                break;
+            case STRING:
+                attrJson.put(attr.getLabel(), (String)resource.getValue());
+                break;
+            case TIME:
+                //TODO: is correct transform date to string?
+                attrJson.put(attr.getLabel(), ((Date)resource.getValue()).toString());
+                break;
+            case OPAQUE:
+                byte [] data = (byte[])resource.getValue();
+                if (valueType.equals("interger")) {
+                    switch(data.length) {
+                        case 1:
+                            Byte b = data[0];
+                            attrJson.put(attr.getLabel(), b.intValue());
+                            break;
+                        case 2:
+                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getShort());
+                            break;
+                        case 4:
+                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getInt());
+                            break;
+                        case 8:
+                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getLong());
+                            break;
+                        default:
+                            logger.error("Attribute " + attr.getLwm2mPath() + 
+                                " mapped as integer but received " + 
+                                data.length + " bytes.");
+                            throw new Exception();
+                    }
+                } else if (valueType.equals("boolean")) {
+                    if (data.length != 1) {
+                        logger.error("Attribute " + attr.getLwm2mPath() +
+                            " mapped as boolean but received " + 
+                            data.length + " bytes.");
+                        throw new Exception();
+                    }
+                    if (data[0] == 1) {
+                        attrJson.put(attr.getLabel(), true);
+                    } else {
+                        attrJson.put(attr.getLabel(), false);
+                    }
+                } else if (valueType.equals("float")) {
+                    switch(data.length) {
+                        case 4:
+                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getFloat());
+                            break;
+                        case 8:
+                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getDouble());
+                            break;
+                        default:
+                            logger.error("Attribute " + attr.getLwm2mPath() +
+                                " mapped as float but received " + 
+                                data.length + " bytes.");
+                            throw new Exception();
+                    }
+                } else { // we are assuming the others type are string compatible (is it safe?)
+                    attrJson.put(attr.getLabel(), new String(data));
+                }
+                break;
+            default:
+                logger.error("Unsupported resource type: " + resource.getType().toString());
+                throw new Exception();
+        }
+
+        return attrJson;
+    }
+
     /**
      * @brief This method is a callback and it is called every time a new device
      * is created. It creates a device representation, register the security key,
@@ -183,7 +265,7 @@ public class LwM2MAgent implements Runnable {
         if (controlStructure.isSouthboundAssociate()) {
         	logger.debug("Observing some attributes");
         	this.requestHandler.CancelAllObservations(controlStructure.registration);
-        	observeResources(device.getReadableAttributes(), controlStructure.registration);
+        	observeResources(deviceId, tenant, device.getReadableAttributes(), controlStructure.registration);
         } else {
         	logger.debug("skipping observing, southbound is not registered yet");
         }
@@ -191,13 +273,26 @@ public class LwM2MAgent implements Runnable {
         return 0;
     }
     
-    private void observeResources(LinkedList<DeviceAttribute> readableAttrs, Registration registration) {
-    	for (DeviceAttribute attr : readableAttrs) {
-          String path = attr.getLwm2mPath();
-          logger.debug("Observing: " + attr.getLabel());
-          requestHandler.ObserveResource(registration, path);
-          //TODO: update the attributes data with the observation's return
-		}
+    private void observeResources(String deviceId, String tenant, 
+        LinkedList<DeviceAttribute> readableAttrs, Registration registration) {
+
+        JSONObject attrJson;
+        JSONObject allAttrsJson = new JSONObject();
+        for (DeviceAttribute attr : readableAttrs) {
+            String path = attr.getLwm2mPath();
+            logger.debug("Observing: " + attr.getLabel());
+            try {
+                LwM2mSingleResource resource = requestHandler.ObserveResource(registration, path);
+                if (resource == null) {
+                    throw new Exception();
+                }
+                attrJson = transformLwm2mResourceValueIntoJson(attr, resource);
+                allAttrsJson.put(attr.getLabel(), attrJson.get(attr.getLabel()));
+            } catch (Exception e) {
+                this.logger.warn("Failed to observe resource: " + attr.getLwm2mPath());
+            }          
+        }
+        eventHandler.updateAttrs(deviceId, tenant, allAttrsJson, null);
     }
     
     private Integer on_remove(JSONObject message) {
@@ -297,7 +392,8 @@ public class LwM2MAgent implements Runnable {
 				}
         		
         		requestHandler.CancelAllObservations(controlStructure.registration);
-        		observeResources(device.getReadableAttributes(), controlStructure.registration);
+                observeResources(controlStructure.deviceId, controlStructure.tenant, 
+                    device.getReadableAttributes(), controlStructure.registration);
         	} else {
             	logger.debug("skpping observing, northbound is not registered yet");
         	}
@@ -373,83 +469,16 @@ public class LwM2MAgent implements Runnable {
             	logger.warn("Attribute with path " + observation.getPath().toString() + " is not mapped");
             	return;
             }
-            
-            JSONObject attrJson = new JSONObject();
-            String valueType = attr.getValueType();
-            
-            switch (resource.getType()) {
-				case BOOLEAN:
-					attrJson.put(attr.getLabel(), (Boolean)resource.getValue());
-					break;
-				case FLOAT:
-					attrJson.put(attr.getLabel(), (Double)resource.getValue());
-					break;
-				case INTEGER:
-					attrJson.put(attr.getLabel(), (Long)resource.getValue());
-					break;
-				case STRING:
-					attrJson.put(attr.getLabel(), (String)resource.getValue());
-					break;
-				case TIME:
-					//TODO: is correct transform date to string?
-					attrJson.put(attr.getLabel(), ((Date)resource.getValue()).toString());
-					break;
-				case OPAQUE:
-					byte [] data = (byte[])resource.getValue();
-		            if (valueType.equals("interger")) {
-		            	switch(data.length) {
-		            		case 1:
-		            			Byte b = data[0];
-		            			attrJson.put(attr.getLabel(), b.intValue());
-		            			break;
-		            		case 2:
-		            			attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getShort());
-		            			break;
-		            		case 4:
-		            			attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getInt());
-		            			break;
-		            		case 8:
-		            			attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getLong());
-		            			break;
-		            		default:
-		            			logger.error("Attribute " + attr.getLwm2mPath() + " mapped as integer but received " + 
-		            						 data.length + " bytes.");
-		            			return;
-		            	}		            	
-		            } else if (valueType.equals("boolean")) {
-		            	if (data.length != 1) {
-	            			logger.error("Attribute " + attr.getLwm2mPath() + " mapped as boolean but received " + 
-           						 		 data.length + " bytes.");
-		            		return;
-		            	}
-		            	if (data[0] == 1) {
-		            		attrJson.put(attr.getLabel(), true);
-		            	} else {
-		            		attrJson.put(attr.getLabel(), false);
-		            	}
-		            } else if (valueType.equals("float")) {
-		            	switch(data.length) {
-			            	case 4:
-			            		attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getFloat());
-			            		break;
-			            	case 8:
-			            		attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getDouble());
-			            		break;
-		            		default:
-		            			logger.error("Attribute " + attr.getLwm2mPath() + " mapped as float but received " + 
-	            						 	 data.length + " bytes.");
-		            			return;
-		            	}		            	
-		            } else { // we are assuming the others type are string compatible (is it safe?)
-		            	attrJson.put(attr.getLabel(), new String(data));
-		            }
-					break;
-				default:
-					logger.error("Unsupported resource type: " + resource.getType().toString());
-					return;
-            }
-			
-            eventHandler.updateAttrs(controlStruture.deviceId, controlStruture.tenant, attrJson, null);
+
+			JSONObject attrJson;			
+			try {
+				attrJson = transformLwm2mResourceValueIntoJson(attr, resource);
+			} catch (Exception e) {
+				return ;
+			}
+
+			eventHandler.updateAttrs(controlStruture.deviceId, 
+				controlStruture.tenant, attrJson, null);
         }
 
         @Override
