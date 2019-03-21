@@ -36,14 +36,14 @@ public class LwM2mHandler {
         LwM2mSingleResource resource = null;
         try {
             Integer pathArray[] = DeviceAttribute.getIdsfromPath(path);
-            ObserveResponse response = server.send(registration, 
+            ObserveResponse response = server.send(registration,
                 new ObserveRequest(pathArray[0], pathArray[1], pathArray[2]), readTimout);
             if (response == null) {
                 this.mLogger.error("observe request timed out");
                 return null;
             }
             if (!response.isSuccess()) {
-                this.mLogger.error("Observe request failed. Error: " + 
+                this.mLogger.error("Observe request failed. Error: " +
                     response.toString());
                 return null;
             }
@@ -60,20 +60,20 @@ public class LwM2mHandler {
         }
         return resource;
     }
-    
+
     public void CancelAllObservations(Registration registration) {
         server.getObservationService().cancelObservations(registration);
     }
-    
+
     public void ExecuteResource(Registration registration, String path, String parameters) {
-    	try {
-    		if ( (parameters == null) || parameters.isEmpty() ) {
-    			mLogger.debug("Execute: " + path + " without parameters");
-    			server.send(registration, new ExecuteRequest(path));
-    		} else {
-    			mLogger.debug("Execute: " + path + " with parameters: " + parameters);
-    			server.send(registration, new ExecuteRequest(path, parameters));    			
-    		}
+        try {
+            if ( (parameters == null) || parameters.isEmpty() ) {
+                mLogger.debug("Execute: " + path + " without parameters");
+                server.send(registration, new ExecuteRequest(path));
+            } else {
+                mLogger.debug("Execute: " + path + " with parameters: " + parameters);
+                server.send(registration, new ExecuteRequest(path, parameters));
+            }
         } catch (Exception e) {
             // TODO: Log errors here
             e.printStackTrace();
@@ -83,7 +83,7 @@ public class LwM2mHandler {
 
     public void WriteResource(Registration registration, String path, Object value) {
         try {
-        	Integer pathArray[] = DeviceAttribute.getIdsfromPath(path);
+            Integer pathArray[] = DeviceAttribute.getIdsfromPath(path);
             if (value instanceof String) {
                 WriteResponse response = server.send(registration, new WriteRequest(pathArray[0], pathArray[1], pathArray[2], (String) value));
             } else if (value instanceof Double) {
@@ -93,7 +93,7 @@ public class LwM2mHandler {
             } else if (value instanceof Integer) {
                 WriteResponse response = server.send(registration, new WriteRequest(pathArray[0], pathArray[1], pathArray[2], (Integer) value));
             } else {
-            	mLogger.error("Unexpected type: " + value.toString());	
+                mLogger.error("Unexpected type: " + value.toString());
             }
 
         } catch (Exception e) {

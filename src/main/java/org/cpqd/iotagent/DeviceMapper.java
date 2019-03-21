@@ -35,7 +35,7 @@ public class DeviceMapper {
     	this.deviceControlStruct.put(clientEndpoint, controlStruct);
     	return controlStruct;
     }
-    
+
     public DeviceControlStructure addNorthboundAssociation(String clientEndpoint, String deviceId, String tenant) {
     	DeviceControlStructure controlStruct = this.deviceControlStruct.get(clientEndpoint);
     	if (controlStruct == null) {
@@ -47,7 +47,7 @@ public class DeviceMapper {
     	this.deviceControlStruct.put(clientEndpoint, controlStruct);
     	return controlStruct;
     }
-    
+
     public DeviceControlStructure getDeviceControlStructure(String clientEndpoint) {
     	DeviceControlStructure controlStruct = this.deviceControlStruct.get(clientEndpoint);
     	if (controlStruct == null) {
@@ -55,7 +55,7 @@ public class DeviceMapper {
     	}
     	return controlStruct;
     }
-    
+
     public boolean removeSouthboundAssociation(String clientEndpoint) {
     	DeviceControlStructure controlStruct = this.deviceControlStruct.get(clientEndpoint);
     	if (controlStruct == null) {
@@ -68,7 +68,7 @@ public class DeviceMapper {
     	}
     	return true;
     }
-    
+
     public boolean removeNorthboundAssociation(String clientEndpoint) {
     	DeviceControlStructure controlStruct = this.deviceControlStruct.get(clientEndpoint);
     	if (controlStruct == null) {

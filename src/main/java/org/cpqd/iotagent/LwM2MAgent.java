@@ -50,9 +50,9 @@ public class LwM2MAgent implements Runnable {
     public LwM2MAgent() {
         this.eventHandler = new Manager();
         this.deviceMapper = new DeviceMapper();
-        
+
         this.securityStore = new InMemorySecurityStore();
-        
+
         Config dojotConfig = Config.getInstance();
 //        imageDownloader = new ImageDownloader("http://" + dojotConfig.getImageManagerAddress());
 
@@ -64,51 +64,51 @@ public class LwM2MAgent implements Runnable {
     }
 
     /**
-     * @brief The bootstrap procedure retrieves from the device manager the
-     * information about devices previously created to build a device representation
+     * @brief The bootstrap procedure retrieves information about devices previously created from to device manager to
+     * build a updated vision about the devices
      */
     public boolean bootstrap() {
-    	logger.debug("Bootstrap iotagent leshan: started");
-    	Services iotAgent = Services.getInstance();
-    	
-    	List<String> tenants = iotAgent.listTenants();
-    	if (tenants == null) {
-    		logger.error("Fail to retrieve tenants");
-    		return false;
-    	}
-    	for (String tenant: tenants) {
-    		logger.debug("Requesting devices from tenant: " + tenant);
-    		List<String> devicesId = iotAgent.listDevices(tenant);
-        	if (devicesId == null) {
-        		logger.error("Fail to retrieve devices");
-        		return false;
-        	}
-    		for (String deviceId: devicesId) {
-    			logger.debug("Requesting device with device id: " + deviceId);
-    			JSONObject deviceJson = iotAgent.getDevice(deviceId, tenant);
-            	if (deviceJson == null) {
-            		logger.error("Fail to retrieve device");
-            		return false;
-            	}
-    			Device device;
-				try {
-					device = new Device(deviceJson);
-				} catch (Exception e) {
-					//just skip this device, it probably is not a LWM2M device
-					continue;
-				}
-    			this.deviceMapper.addNorthboundAssociation(device.getClientEndpoint(), deviceId, tenant);
-    		}
-    	}
-    	
-    	logger.debug("Bootstrap iotagent leshan: finished");
-    	return true;
+        logger.debug("Bootstrap iotagent leshan: started");
+        Services iotAgent = Services.getInstance();
+
+        List<String> tenants = iotAgent.listTenants();
+        if (tenants == null) {
+            logger.error("Fail to retrieve tenants");
+            return false;
+        }
+        for (String tenant: tenants) {
+            logger.debug("Requesting devices from tenant: " + tenant);
+            List<String> devicesId = iotAgent.listDevices(tenant);
+            if (devicesId == null) {
+                logger.error("Fail to retrieve devices");
+                return false;
+            }
+            for (String deviceId: devicesId) {
+                logger.debug("Requesting device with device id: " + deviceId);
+                JSONObject deviceJson = iotAgent.getDevice(deviceId, tenant);
+                if (deviceJson == null) {
+                    logger.error("Fail to retrieve device");
+                    return false;
+                }
+                Device device;
+                try {
+                    device = new Device(deviceJson);
+                } catch (Exception e) {
+                    //just skip this device, it probably is not a LWM2M device
+                    continue;
+                }
+                this.deviceMapper.addNorthboundAssociation(device.getClientEndpoint(), deviceId, tenant);
+            }
+        }
+
+        logger.debug("Bootstrap iotagent leshan: finished");
+        return true;
     }
 
     private JSONObject transformLwm2mResourceValueIntoJson(DeviceAttribute attr, LwM2mSingleResource resource) throws Exception {
         JSONObject attrJson = new JSONObject();
         String valueType = attr.getValueType();
-        
+
         switch (resource.getType()) {
             case BOOLEAN:
                 attrJson.put(attr.getLabel(), (Boolean)resource.getValue());
@@ -144,15 +144,15 @@ public class LwM2MAgent implements Runnable {
                             attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getLong());
                             break;
                         default:
-                            logger.error("Attribute " + attr.getLwm2mPath() + 
-                                " mapped as integer but received " + 
+                            logger.error("Attribute " + attr.getLwm2mPath() +
+                                " mapped as integer but received " +
                                 data.length + " bytes.");
                             throw new Exception();
                     }
                 } else if (valueType.equals("boolean")) {
                     if (data.length != 1) {
                         logger.error("Attribute " + attr.getLwm2mPath() +
-                            " mapped as boolean but received " + 
+                            " mapped as boolean but received " +
                             data.length + " bytes.");
                         throw new Exception();
                     }
@@ -171,7 +171,7 @@ public class LwM2MAgent implements Runnable {
                             break;
                         default:
                             logger.error("Attribute " + attr.getLwm2mPath() +
-                                " mapped as float but received " + 
+                                " mapped as float but received " +
                                 data.length + " bytes.");
                             throw new Exception();
                     }
@@ -188,28 +188,27 @@ public class LwM2MAgent implements Runnable {
     }
 
     /**
-     * @brief This method is a callback and it is called every time a new device
-     * is created. It creates a device representation, register the security key,
-     * if any, and can trigger the observation procedure if applicable
+     * @brief This method is a callback and it is called every time a new device is created. It creates a device
+     * representation, register the security key, if any, and can trigger the observation procedure if applicable
      * @param message
      * @return
      */
     private Integer on_create(JSONObject message) {
         logger.debug("on_create: " + message.toString());
-        
+
         // try to build a device representation
         String tenant = message.getJSONObject("meta").getString("service");
         Device device;
-		try {
-			device = new Device(message.getJSONObject("data"));
-		} catch (JSONException e) {
-			logger.error("Invalid json");
-			return 0;
-		} catch (Exception e) {
-			// this it not a lwm2m device, just skip it
-			return 0;
-		}
-		
+        try {
+            device = new Device(message.getJSONObject("data"));
+        } catch (JSONException e) {
+            logger.error("Invalid json");
+            return 0;
+        } catch (Exception e) {
+            // this it not a lwm2m device, just skip it
+            return 0;
+        }
+
         String deviceId = device.getDeviceId();
         String clientEndpoint = device.getClientEndpoint();
 
@@ -217,63 +216,63 @@ public class LwM2MAgent implements Runnable {
         // registered with this client endpoint and adds a new entry with the received data
 
         // '/0/0/5' is the standard path to pre-shared key value
-		DeviceAttribute pskAttr = device.getAttributeByPath("/0/0/5");
-		if (pskAttr != null) {
-			if (!pskAttr.getValueType().equals("psk")) {
-				//todo
-				logger.error("device " + deviceId + ": invalid psk value type, it must be 'psk'");
-				return 0;
-			}
-			String psk = (String) pskAttr.getStaticValue();
-			if (psk == null) {
-				logger.error("device " + deviceId + ": missing psk value. Have you configured it?");
-				return 0;
-			}
-			// '/0/0/3' is the standard path to the pre-shared key identity
-			DeviceAttribute pskIdentityAttr = device.getAttributeByPath("/0/0/3");
-			if (pskIdentityAttr == null) {
-				logger.error("device " + deviceId + ": psk is present, but psk identity not");
-				return 0;
-			}
-			if (!pskIdentityAttr.getValueType().equals("string")) {
-				logger.error("device " + deviceId + ": invalid psk identity value type, it must be 'string'");
-				return 0;
-			}
-			String pskIdentity = (String) pskIdentityAttr.getStaticValue();
-			if (pskIdentity == null) {
-				logger.error("device " + deviceId + ": missing psk identity configuration. Have you configured it?");
-				return 0;
-			}
-			SecurityInfo securityInfo = SecurityInfo.newPreSharedKeyInfo(clientEndpoint,
-																		 pskIdentity,
-																		 Hex.decodeHex(psk.toCharArray()));
-			try {
-				this.securityStore.remove(clientEndpoint);
-				this.securityStore.add(securityInfo);
-				logger.debug("Adding a psk to device: " + deviceId);
-			} catch (NonUniqueSecurityInfoException e) {
-				e.printStackTrace();
-				return 0;
-			}			
-		} else {
-			logger.debug("device: " + deviceId + " is not using DTLS");
-		}
-        
-        DeviceControlStructure controlStructure = this.deviceMapper.addNorthboundAssociation(clientEndpoint,
-        																					 deviceId,
-        																					 tenant);
-        if (controlStructure.isSouthboundAssociate()) {
-        	logger.debug("Observing some attributes");
-        	this.requestHandler.CancelAllObservations(controlStructure.registration);
-        	observeResources(deviceId, tenant, device.getReadableAttributes(), controlStructure.registration);
+        DeviceAttribute pskAttr = device.getAttributeByPath("/0/0/5");
+        if (pskAttr != null) {
+            if (!pskAttr.getValueType().equals("psk")) {
+                //todo
+                logger.error("device " + deviceId + ": invalid psk value type, it must be 'psk'");
+                return 0;
+            }
+            String psk = (String) pskAttr.getStaticValue();
+            if (psk == null) {
+                logger.error("device " + deviceId + ": missing psk value. Have you configured it?");
+                return 0;
+            }
+            // '/0/0/3' is the standard path to the pre-shared key identity
+            DeviceAttribute pskIdentityAttr = device.getAttributeByPath("/0/0/3");
+            if (pskIdentityAttr == null) {
+                logger.error("device " + deviceId + ": psk is present, but psk identity not");
+                return 0;
+            }
+            if (!pskIdentityAttr.getValueType().equals("string")) {
+                logger.error("device " + deviceId + ": invalid psk identity value type, it must be 'string'");
+                return 0;
+            }
+            String pskIdentity = (String) pskIdentityAttr.getStaticValue();
+            if (pskIdentity == null) {
+                logger.error("device " + deviceId + ": missing psk identity configuration. Have you configured it?");
+                return 0;
+            }
+            SecurityInfo securityInfo = SecurityInfo.newPreSharedKeyInfo(clientEndpoint,
+                                                                         pskIdentity,
+                                                                         Hex.decodeHex(psk.toCharArray()));
+            try {
+                this.securityStore.remove(clientEndpoint);
+                this.securityStore.add(securityInfo);
+                logger.debug("Adding a psk to device: " + deviceId);
+            } catch (NonUniqueSecurityInfoException e) {
+                e.printStackTrace();
+                return 0;
+            }
         } else {
-        	logger.debug("skipping observing, southbound is not registered yet");
+            logger.debug("device: " + deviceId + " is not using DTLS");
         }
-        
+
+        DeviceControlStructure controlStructure = this.deviceMapper.addNorthboundAssociation(clientEndpoint,
+                                                                                             deviceId,
+                                                                                             tenant);
+        if (controlStructure.isSouthboundAssociate()) {
+            logger.debug("Observing some attributes");
+            this.requestHandler.CancelAllObservations(controlStructure.registration);
+            observeResources(deviceId, tenant, device.getReadableAttributes(), controlStructure.registration);
+        } else {
+            logger.debug("skipping observing, southbound is not registered yet");
+        }
+
         return 0;
     }
-    
-    private void observeResources(String deviceId, String tenant, 
+
+    private void observeResources(String deviceId, String tenant,
         LinkedList<DeviceAttribute> readableAttrs, Registration registration) {
 
         JSONObject attrJson;
@@ -290,29 +289,29 @@ public class LwM2MAgent implements Runnable {
                 allAttrsJson.put(attr.getLabel(), attrJson.get(attr.getLabel()));
             } catch (Exception e) {
                 this.logger.warn("Failed to observe resource: " + attr.getLwm2mPath());
-            }          
+            }
         }
         eventHandler.updateAttrs(deviceId, tenant, allAttrsJson, null);
     }
-    
+
     private Integer on_remove(JSONObject message) {
         logger.debug("on_remove: " + message.toString());
-        
+
         Device device;
-		try {
-			device = new Device(message.getJSONObject("data"));
-		} catch (JSONException e) {
-			logger.error("Invalid json");
-			return 0;
-		} catch (Exception e) {
-			// this it not a lwm2m device, just skip it
-			return 0;
-		}
-        
+        try {
+            device = new Device(message.getJSONObject("data"));
+        } catch (JSONException e) {
+            logger.error("Invalid json");
+            return 0;
+        } catch (Exception e) {
+            // this it not a lwm2m device, just skip it
+            return 0;
+        }
+
         String clientEndpoint = device.getClientEndpoint();
         DeviceControlStructure controlStructure = this.deviceMapper.getDeviceControlStructure(clientEndpoint);
         if (controlStructure.isSouthboundAssociate()) {
-        	this.requestHandler.CancelAllObservations(controlStructure.registration);
+            this.requestHandler.CancelAllObservations(controlStructure.registration);
         }
         this.deviceMapper.removeNorthboundAssociation(clientEndpoint);
         return 0;
@@ -329,91 +328,91 @@ public class LwM2MAgent implements Runnable {
         Services iotAgent = Services.getInstance();
         JSONObject deviceJson = iotAgent.getDevice(deviceId, tenant);
         Device device;
-		try {
-			device = new Device(deviceJson);
-		} catch (Exception e) {
-			return 0;
-		}
+        try {
+            device = new Device(deviceJson);
+        } catch (Exception e) {
+            return 0;
+        }
 
         DeviceControlStructure controlStruture = this.deviceMapper.getDeviceControlStructure(device.getClientEndpoint());
 
         if ((controlStruture == null) || (!controlStruture.isSouthboundAssociate())) {
-        	//TODO: maybe send some alarm here?
-        	logger.error("Device: " + device.getDeviceId() + " is not registered");
-        	return 0;
+            //TODO: maybe send some alarm here?
+            logger.error("Device: " + device.getDeviceId() + " is not registered");
+            return 0;
         }
         JSONObject attrs = message.getJSONObject("data").getJSONObject("attrs");
         JSONArray targetAttrs = attrs.names();
 
         for (int i = 0; i < targetAttrs.length(); ++i) {
-        	String targetAttr = targetAttrs.getString(i);
-        	devAttr = device.getAttributeByLabel(targetAttr);
-        	if (devAttr != null) {
-        		logger.debug("actuating on attribute: " + devAttr.getLabel());
-        		String path = devAttr.getLwm2mPath();
-        		if (devAttr.isExecutable()) {
-        			logger.debug("excuting");
-        			requestHandler.ExecuteResource(controlStruture.registration, path, attrs.getString(targetAttr));
-        		} else if (devAttr.isWritable()) {
-        			logger.debug("writing");
-        			// TODO: maybe firmware update goes here
-        			requestHandler.WriteResource(controlStruture.registration, path, attrs.get(targetAttr));
-        		}
-        	} else {
-        		logger.warn("skipping attribute: " + targetAttr + ". Not found.");
-        	}
-		}
+            String targetAttr = targetAttrs.getString(i);
+            devAttr = device.getAttributeByLabel(targetAttr);
+            if (devAttr != null) {
+                logger.debug("actuating on attribute: " + devAttr.getLabel());
+                String path = devAttr.getLwm2mPath();
+                if (devAttr.isExecutable()) {
+                    logger.debug("excuting");
+                    requestHandler.ExecuteResource(controlStruture.registration, path, attrs.getString(targetAttr));
+                } else if (devAttr.isWritable()) {
+                    logger.debug("writing");
+                    // TODO: maybe firmware update goes here
+                    requestHandler.WriteResource(controlStruture.registration, path, attrs.get(targetAttr));
+                }
+            } else {
+                logger.warn("skipping attribute: " + targetAttr + ". Not found.");
+            }
+        }
 
         return 0;
     }
 
 
     private final RegistrationListener registrationListener = new RegistrationListener() {
-    	
-    	@Override
+
+        @Override
         public void registered(Registration registration,
-        					   Registration previousReg,
+                               Registration previousReg,
                                Collection<Observation> previousObsersations) {
-        	logger.debug("registered: " + registration.toString());
-        	
-        	DeviceControlStructure controlStructure = deviceMapper.addSouthboundAssociation(registration.getEndpoint(),
-        																					registration);
-        	if (controlStructure.isNorthboundAssociate()) {
-            	logger.debug("Observing some attributes");
-            	
-        		Services iotAgent = Services.getInstance();
-        		JSONObject cachedDev = iotAgent.getDevice(controlStructure.deviceId, controlStructure.tenant);
-        		Device device;
-				try {
-					device = new Device(cachedDev);
-				} catch (Exception e) {
-					logger.error("Unexpected situation");
-					return;
-				}
-        		
-        		requestHandler.CancelAllObservations(controlStructure.registration);
-                observeResources(controlStructure.deviceId, controlStructure.tenant, 
+            logger.debug("registered: " + registration.toString());
+
+            DeviceControlStructure controlStructure = deviceMapper.addSouthboundAssociation(registration.getEndpoint(),
+                                                                                            registration);
+            if (controlStructure.isNorthboundAssociate()) {
+                logger.debug("Observing some attributes");
+
+                Services iotAgent = Services.getInstance();
+                JSONObject cachedDev = iotAgent.getDevice(controlStructure.deviceId, controlStructure.tenant);
+                Device device;
+                try {
+                    device = new Device(cachedDev);
+                } catch (Exception e) {
+                    logger.error("Unexpected situation");
+                    return;
+                }
+
+                requestHandler.CancelAllObservations(controlStructure.registration);
+                observeResources(controlStructure.deviceId, controlStructure.tenant,
                     device.getReadableAttributes(), controlStructure.registration);
-        	} else {
-            	logger.debug("skpping observing, northbound is not registered yet");
-        	}
-        	
+            } else {
+                logger.debug("skpping observing, northbound is not registered yet");
+            }
+
         }
 
-    	@Override
-        public void updated(RegistrationUpdate update, Registration updatedReg, Registration previousReg) {        	
-        	logger.debug("updated: " + update.toString());
-        	
-        	deviceMapper.addSouthboundAssociation(updatedReg.getEndpoint(), updatedReg);
+        @Override
+        public void updated(RegistrationUpdate update, Registration updatedReg, Registration previousReg) {
+            logger.debug("updated: " + update.toString());
+
+            deviceMapper.addSouthboundAssociation(updatedReg.getEndpoint(), updatedReg);
         }
 
-    	@Override
+        @Override
         public void unregistered(Registration registration,
-        						 Collection<Observation> observations,
-        						 boolean expired,
-                                 Registration newReg) {        	
+                                 Collection<Observation> observations,
+                                 boolean expired,
+                                 Registration newReg) {
             logger.debug("device left: " + registration.getEndpoint());
-            
+
             deviceMapper.removeSouthboundAssociation(registration.getEndpoint());
         }
     };
@@ -425,60 +424,60 @@ public class LwM2MAgent implements Runnable {
 
         @Override
         public void onResponse(Observation observation, Registration registration, ObserveResponse response) {
-        	logger.debug("Received notification from [" + observation.getPath() + "]");
+            logger.debug("Received notification from [" + observation.getPath() + "]");
 
-        	//retrieve response content
-        	LwM2mNode lwm2mNode = response.getContent();
-        	if (lwm2mNode == null) {
-        		logger.warn("Response is null. Skipping it");
-        		return;
-        	}
-        	if (!(lwm2mNode instanceof LwM2mSingleResource)) {
-        		logger.warn("Unsuported content object.");
-        		return;
-        	}
-        	LwM2mSingleResource resource = (LwM2mSingleResource)lwm2mNode;
-        	
-        	//retrieve device's attribute information
+            //retrieve response content
+            LwM2mNode lwm2mNode = response.getContent();
+            if (lwm2mNode == null) {
+                logger.warn("Response is null. Skipping it");
+                return;
+            }
+            if (!(lwm2mNode instanceof LwM2mSingleResource)) {
+                logger.warn("Unsuported content object.");
+                return;
+            }
+            LwM2mSingleResource resource = (LwM2mSingleResource)lwm2mNode;
+
+            //retrieve device's attribute information
             DeviceControlStructure controlStruture = deviceMapper.getDeviceControlStructure(registration.getEndpoint());
             if (controlStruture == null) {
-            	logger.warn("Unknown endpoint: " + registration.getEndpoint());
-            	return;
+                logger.warn("Unknown endpoint: " + registration.getEndpoint());
+                return;
             }
             if (!controlStruture.isNorthboundAssociate()) {
-            	logger.warn("There is not device associate yet with the endpoint: " + registration.getEndpoint());
-            	return;
+                logger.warn("There is not device associate yet with the endpoint: " + registration.getEndpoint());
+                return;
             }
             Services iotAgent = Services.getInstance();
             //TODO: what happens if a device is not found?
             JSONObject deviceJson = iotAgent.getDevice(controlStruture.deviceId, controlStruture.tenant);
             if (deviceJson == null) {
-            	logger.warn("Device " + controlStruture.deviceId + " has not found");
-            	return; 
+                logger.warn("Device " + controlStruture.deviceId + " has not found");
+                return;
             }
-            
+
             Device device;
-			try {
-				device = new Device(deviceJson);
-			} catch (Exception e) {
-				logger.error("Unexpected situation");
-				return;
-			}
+            try {
+                device = new Device(deviceJson);
+            } catch (Exception e) {
+                logger.error("Unexpected situation");
+                return;
+            }
             DeviceAttribute attr = device.getAttributeByPath(observation.getPath().toString());
             if (attr == null) {
-            	logger.warn("Attribute with path " + observation.getPath().toString() + " is not mapped");
-            	return;
+                logger.warn("Attribute with path " + observation.getPath().toString() + " is not mapped");
+                return;
             }
 
-			JSONObject attrJson;			
-			try {
-				attrJson = transformLwm2mResourceValueIntoJson(attr, resource);
-			} catch (Exception e) {
-				return ;
-			}
+            JSONObject attrJson;
+            try {
+                attrJson = transformLwm2mResourceValueIntoJson(attr, resource);
+            } catch (Exception e) {
+                return ;
+            }
 
-			eventHandler.updateAttrs(controlStruture.deviceId, 
-				controlStruture.tenant, attrJson, null);
+            eventHandler.updateAttrs(controlStruture.deviceId,
+                controlStruture.tenant, attrJson, null);
         }
 
         @Override
@@ -500,9 +499,9 @@ public class LwM2MAgent implements Runnable {
             // Set encoder/decoders
             builder.setEncoder(new DefaultLwM2mNodeEncoder());
             builder.setDecoder(new DefaultLwM2mNodeDecoder());
-            
+
             builder.setSecurityStore(this.securityStore);
-            
+
             // Start Server
             server = builder.build();
             server.start();
@@ -519,5 +518,5 @@ public class LwM2MAgent implements Runnable {
             logger.error(e);
         }
     }
-	
+
 }
