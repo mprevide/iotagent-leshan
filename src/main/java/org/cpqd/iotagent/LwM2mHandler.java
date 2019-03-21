@@ -75,7 +75,6 @@ public class LwM2mHandler {
                 server.send(registration, new ExecuteRequest(path, parameters));
             }
         } catch (Exception e) {
-            // TODO: Log errors here
             e.printStackTrace();
             mLogger.error(e);
         }

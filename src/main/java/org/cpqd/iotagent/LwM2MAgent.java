@@ -123,7 +123,6 @@ public class LwM2MAgent implements Runnable {
                 attrJson.put(attr.getLabel(), (String)resource.getValue());
                 break;
             case TIME:
-                //TODO: is correct transform date to string?
                 attrJson.put(attr.getLabel(), ((Date)resource.getValue()).toString());
                 break;
             case OPAQUE:
@@ -335,12 +334,11 @@ public class LwM2MAgent implements Runnable {
         }
 
         DeviceControlStructure controlStruture = this.deviceMapper.getDeviceControlStructure(device.getClientEndpoint());
-
         if ((controlStruture == null) || (!controlStruture.isSouthboundAssociate())) {
-            //TODO: maybe send some alarm here?
             logger.error("Device: " + device.getDeviceId() + " is not registered");
             return 0;
         }
+
         JSONObject attrs = message.getJSONObject("data").getJSONObject("attrs");
         JSONArray targetAttrs = attrs.names();
 
@@ -355,7 +353,6 @@ public class LwM2MAgent implements Runnable {
                     requestHandler.ExecuteResource(controlStruture.registration, path, attrs.getString(targetAttr));
                 } else if (devAttr.isWritable()) {
                     logger.debug("writing");
-                    // TODO: maybe firmware update goes here
                     requestHandler.WriteResource(controlStruture.registration, path, attrs.get(targetAttr));
                 }
             } else {
@@ -449,7 +446,6 @@ public class LwM2MAgent implements Runnable {
                 return;
             }
             Services iotAgent = Services.getInstance();
-            //TODO: what happens if a device is not found?
             JSONObject deviceJson = iotAgent.getDevice(controlStruture.deviceId, controlStruture.tenant);
             if (deviceJson == null) {
                 logger.warn("Device " + controlStruture.deviceId + " has not found");

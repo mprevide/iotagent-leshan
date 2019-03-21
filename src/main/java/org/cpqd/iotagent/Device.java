@@ -34,14 +34,12 @@ public class Device {
                     this.endpoint = (String)devAttr.getStaticValue();
                 }
                 if (!devAttr.isLwm2mAttr()) {
-//                    logger.debug("Skipping " + devAttr.getLabel() + " is not a lwm2m attr");
                     // skip this attribute
                     continue;
                 }
                 if (devAttr.isReadable()) {
                     this.lwm2mReadableAttributes.add(devAttr);
                 }
-//                logger.debug("adding " + devAttr.getLabel());
                 this.mapLwm2mAttributesByLabel.put(devAttr.getLabel(), devAttr);
                 this.mapLwm2mAttributesByPath.put(devAttr.getLwm2mPath(), devAttr);
              }
