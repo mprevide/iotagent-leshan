@@ -12,9 +12,11 @@ import org.eclipse.leshan.core.request.ExecuteRequest;
 import org.eclipse.leshan.core.request.ObserveRequest;
 import org.apache.log4j.Logger;
 import org.eclipse.leshan.core.request.WriteRequest;
+import org.eclipse.leshan.core.request.ReadRequest;
 import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.response.ObserveResponse;
 import org.eclipse.leshan.core.response.WriteResponse;
+import org.eclipse.leshan.core.response.ReadResponse;
 import org.eclipse.leshan.core.node.LwM2mSingleResource;
 import org.eclipse.leshan.server.LwM2mServer;
 import org.eclipse.leshan.server.registration.Registration;
@@ -78,6 +80,34 @@ public class LwM2mHandler {
             e.printStackTrace();
             mLogger.error(e);
         }
+    }
+
+    public LwM2mSingleResource ReadResource(Registration registration, String path) {
+        LwM2mSingleResource resource = null;
+        try {
+            Integer pathArray[] = DeviceAttribute.getIdsfromPath(path);
+            ReadResponse response = server.send(registration,
+                new ReadRequest(pathArray[0], pathArray[1], pathArray[2]), readTimout);
+            if (response == null) {
+                this.mLogger.error("read request timed out");
+                return null;
+            }
+            if (!response.isSuccess()) {
+                this.mLogger.error("read request failed. Error: " +
+                    response.toString());
+                return null;
+            }                
+            LwM2mNode lwm2mNode = response.getContent();
+            if (!(lwm2mNode instanceof LwM2mSingleResource)) {
+        		this.mLogger.warn("Unsuported content object.");
+        		return null;
+        	}
+        	resource = (LwM2mSingleResource)lwm2mNode;
+        } catch (Exception e) {
+            e.printStackTrace();
+            this.mLogger.error(e);
+        }
+        return resource;
     }
 
     public void WriteResource(Registration registration, String path, Object value) {

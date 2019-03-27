@@ -47,17 +47,17 @@ public class SimpleFileServer extends CoapServer {
 	private static final Logger LOG = LoggerFactory.getLogger(SimpleFileServer.class.getName());
 
 	public SimpleFileServer(File coapConfigFile, PskStore pskStore) {
-		NetworkConfig.createStandardWithFile(coapConfigFile);
+		NetworkConfig netConfig = NetworkConfig.createStandardWithFile(coapConfigFile);
 		
-		int coapPort = NetworkConfig.getStandard().getInt(NetworkConfig.Keys.COAP_PORT);
-		int secureCoapPort = NetworkConfig.getStandard().getInt(NetworkConfig.Keys.COAP_SECURE_PORT);
+		int coapPort = netConfig.getInt(NetworkConfig.Keys.COAP_PORT);
+		int secureCoapPort = netConfig.getInt(NetworkConfig.Keys.COAP_SECURE_PORT);
 		
 		DtlsConnectorConfig.Builder config = new DtlsConnectorConfig.Builder();		
 		config.setAddress(new InetSocketAddress(secureCoapPort));
 		config.setPskStore(pskStore);
 
 		DTLSConnector connector = new DTLSConnector(config.build());
-		this.addEndpoint(new CoapEndpoint(connector, NetworkConfig.getStandard()));
+		this.addEndpoint(new CoapEndpoint(connector, netConfig));
 		
 		InetSocketAddress bindToAddress = new InetSocketAddress(coapPort);
 		this.addEndpoint(new CoapEndpoint(bindToAddress));
@@ -121,7 +121,7 @@ public class SimpleFileServer extends CoapServer {
 				return;
 			}
 
-			String myURI = getURI() + "/";
+			String myURI = getURI();
 			String path = "/" + request.getOptions().getUriPathString();
 			if (!path.startsWith(myURI)) {
 				LOG.info("Request {} does not match {}!", new Object[] { path, myURI });
