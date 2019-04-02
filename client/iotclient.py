@@ -127,4 +127,3 @@ class IotClient(object):
         base_url = 'http://localhost:8000/device/gen_psk/' + device_id + '?key_length=' + str(key_len)
         r = requests.post(base_url, headers=self.headers, params={'verbose': True})
         return r.text
-

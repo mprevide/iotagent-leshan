@@ -42,4 +42,3 @@ for i in range(0, 3):
 	print("device id: " + device_id)
 	psk = iotc.gen_psk(device_id, 16)
 	print("PSK: " + psk)
-

@@ -38,4 +38,3 @@ for i in range(0, 3):
 	device_payload['attrs'][0]['static_value'] += '-' + str(i)
 	device_id = iotc.create_device(device_payload)
 	print("device id: " + device_id)
-
