@@ -4,7 +4,10 @@ import java.io.File;
 
 import org.apache.log4j.Logger;
 import org.cpqd.iotagent.LwM2MAgent;
+import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.scandium.dtls.pskstore.InMemoryPskStore;
+import org.cpqd.iotagent.ImageDownloader;
+import br.com.dojot.config.Config;
 
 public class LwM2MIoTAgent {
 
@@ -14,8 +17,29 @@ public class LwM2MIoTAgent {
 
         InMemoryPskStore securityStore = new InMemoryPskStore();
 
+        File coapConfigFile = new File(new String("fileServerCoAP.properties"));
+
+        NetworkConfig netConfig = NetworkConfig.createStandardWithFile(coapConfigFile);
+        int coapPort = netConfig.getInt(NetworkConfig.Keys.COAP_PORT);
+        int secureCoapPort = netConfig.getInt(NetworkConfig.Keys.COAP_SECURE_PORT);
+
+        String fileServerAddress;
+
+        if(System.getenv("FILE_SERVER_ADDRESS") == null ){
+            logger.fatal("Missing file server address configuration." + 
+                "Please check if the 'FILE_SERVER_ADDRESS' if setted");
+            System.exit(1);
+        }
+        fileServerAddress = System.getenv("FILE_SERVER_ADDRESS");
+
+        Config dojotConfig = Config.getInstance();
+        String dataDir = "data";
+        ImageDownloader imageDownloader = new ImageDownloader(
+            "http://" + dojotConfig.getImageManagerAddress(), dataDir,
+            fileServerAddress, coapPort, secureCoapPort);
+        
         // we need to share the securityStore with the agent
-        LwM2MAgent agent = new LwM2MAgent();
+        LwM2MAgent agent = new LwM2MAgent(imageDownloader);
 
         boolean bootstraped = agent.bootstrap();
         if (!bootstraped) {
@@ -23,12 +47,10 @@ public class LwM2MIoTAgent {
         	System.exit(1);
         }
 
-        File coapConfigFile = new File(new String("fileServerCoAP.properties"));
         SimpleFileServer fileServer = new SimpleFileServer(coapConfigFile, securityStore);
 
         fileServer.start();
-        // we need to share the path with the ImageDownloader
-        fileServer.addNewResource(new String("data"), new File(new String("data")));
+        fileServer.addNewResource(dataDir, new File(dataDir));
         (new Thread(agent)).start();
 
         while (true) {

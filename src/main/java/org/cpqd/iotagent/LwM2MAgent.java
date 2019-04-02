@@ -32,7 +32,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import br.com.dojot.config.Config;
 import br.com.dojot.kafka.Manager;
 import br.com.dojot.utils.Services;
 
@@ -47,14 +46,13 @@ public class LwM2MAgent implements Runnable {
     private InMemorySecurityStore securityStore;
 
 
-    public LwM2MAgent() {
+    public LwM2MAgent(ImageDownloader imageDownloader) {
         this.eventHandler = new Manager();
         this.deviceMapper = new DeviceMapper();
 
         this.securityStore = new InMemorySecurityStore();
 
-        Config dojotConfig = Config.getInstance();
-//        imageDownloader = new ImageDownloader("http://" + dojotConfig.getImageManagerAddress());
+        this.imageDownloader = imageDownloader;
 
         // register the callbacks to treat the events
         this.eventHandler.addCallback("create", this::on_create);
@@ -103,6 +101,48 @@ public class LwM2MAgent implements Runnable {
 
         logger.debug("Bootstrap iotagent leshan: finished");
         return true;
+    }
+
+    /**
+     * This method is part of Firmware Update. The first thing to do in a firmware update in LwM2m protocol
+     * is send the Package URI to the device. The next step, is wait until the device send that his state
+     * has changed to downloaded (state 2), and, then, actuate on the attribute "FWUpdate-Update", that
+     * will trigger the Firmware Update on the device. 
+     * @param registration, newFwVersion, tenant 
+     * @return
+     */
+    private Integer sendsUriToDevice(Registration registration, String imageLabel,
+        String newFwVersion, String tenant, boolean isSecure) {
+
+        logger.debug("Will try to send URI to device");
+
+        //Verification if the fw version is really changing.
+        LwM2mSingleResource currentFwVersionResource = requestHandler.ReadResource(registration, "/3/0/3");
+        if (currentFwVersionResource == null) {
+            logger.error("Failed to read current firmware version");
+            return 0;
+        }
+        String currentFwVersion = (String) currentFwVersionResource.getValue();
+        logger.debug("Current FW version: " + currentFwVersion);
+        logger.debug("Desirable FW version: " + newFwVersion);
+        //Gets URL to give it to device if the version is actual changing
+        if(!currentFwVersion.equals(newFwVersion)){
+            logger.debug("Versions have actual changed");
+            String fileUri = null;
+            try {
+                fileUri = imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion, isSecure);
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+                return 0;
+            }
+            logger.debug("Got the file URI: " + fileUri);
+            logger.debug("Will write URI in resource package URI");
+            requestHandler.WriteResource(registration, "/5/0/1", fileUri);
+        }
+        else {
+            logger.debug("Device already up-to-date");
+        }
+        return 0;
     }
 
     private JSONObject transformLwm2mResourceValueIntoJson(DeviceAttribute attr, LwM2mSingleResource resource) throws Exception {
@@ -348,6 +388,16 @@ public class LwM2MAgent implements Runnable {
             if (devAttr != null) {
                 logger.debug("actuating on attribute: " + devAttr.getLabel());
                 String path = devAttr.getLwm2mPath();
+
+                // check if it is a firmware update request
+                if (path.equals("/5/0/1")) {
+                    String imageVersion = attrs.getString(targetAttr);
+                    String imageLabel = devAttr.getTemplateId();
+                    logger.info("Image id that came on actuation: " + imageVersion);
+                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, false);
+                    return 0; 
+                }
+
                 if (devAttr.isExecutable()) {
                     logger.debug("excuting");
                     requestHandler.ExecuteResource(controlStruture.registration, path, attrs.getString(targetAttr));
@@ -362,7 +412,6 @@ public class LwM2MAgent implements Runnable {
 
         return 0;
     }
-
 
     private final RegistrationListener registrationListener = new RegistrationListener() {
 
