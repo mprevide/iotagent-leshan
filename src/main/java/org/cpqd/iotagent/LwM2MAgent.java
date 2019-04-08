@@ -31,6 +31,7 @@ import org.eclipse.leshan.util.Hex;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.cpqd.iotagent.FileServerPskStore;
 
 import br.com.dojot.kafka.Manager;
 import br.com.dojot.utils.Services;
@@ -44,15 +45,17 @@ public class LwM2MAgent implements Runnable {
     private LeshanServer server;
     private Manager eventHandler;
     private InMemorySecurityStore securityStore;
+    private FileServerPskStore fsPskStore;
 
 
-    public LwM2MAgent(ImageDownloader imageDownloader) {
+    public LwM2MAgent(ImageDownloader imageDownloader, FileServerPskStore pskStore) {
         this.eventHandler = new Manager();
         this.deviceMapper = new DeviceMapper();
 
         this.securityStore = new InMemorySecurityStore();
 
         this.imageDownloader = imageDownloader;
+        this.fsPskStore = pskStore;
 
         // register the callbacks to treat the events
         this.eventHandler.addCallback("create", this::on_create);
@@ -101,6 +104,10 @@ public class LwM2MAgent implements Runnable {
 
         logger.debug("Bootstrap iotagent leshan: finished");
         return true;
+    }
+
+    public void setKeyPskStore(String keyId, String psk){
+        this.fsPskStore.setKey(keyId, psk.getBytes());
     }
 
     /**
@@ -288,6 +295,8 @@ public class LwM2MAgent implements Runnable {
             try {
                 this.securityStore.remove(clientEndpoint);
                 this.securityStore.add(securityInfo);
+                logger.info("Inserting pskId ioto psk store");
+                this.fsPskStore.setKey(pskIdentity, psk.getBytes());
                 logger.debug("Adding a psk to device: " + deviceId);
             } catch (NonUniqueSecurityInfoException e) {
                 e.printStackTrace();
@@ -347,6 +356,13 @@ public class LwM2MAgent implements Runnable {
             return 0;
         }
 
+        if (device.isSecure()){
+            DeviceAttribute pskIdentityAttr = device.getAttributeByPath("/0/0/3");
+            String pskIdentity = (String) pskIdentityAttr.getStaticValue();
+            logger.info("removing pskId from psk store");
+            this.fsPskStore.removeKey(pskIdentity);
+        }
+
         String clientEndpoint = device.getClientEndpoint();
         DeviceControlStructure controlStructure = this.deviceMapper.getDeviceControlStructure(clientEndpoint);
         if (controlStructure.isSouthboundAssociate()) {
@@ -394,7 +410,7 @@ public class LwM2MAgent implements Runnable {
                     String imageVersion = attrs.getString(targetAttr);
                     String imageLabel = devAttr.getTemplateId();
                     logger.info("Image id that came on actuation: " + imageVersion);
-                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, false);
+                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, device.isSecure());
                     return 0; 
                 }
 
