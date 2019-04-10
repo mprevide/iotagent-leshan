@@ -63,30 +63,36 @@ public class DeviceAttribute {
     }
 
     private void addPathOpMeta(String label) {
-        logger.info("This is the label: " + label);
+        logger.debug("This is the label: " + label);
         switch(label) {
             case "dojot:firmware_update:state":
-                logger.info("state, adding path and setting islwm2mattr to true");
+                logger.debug("state, adding path and setting islwm2mattr to true");
                 this.path = "/5/0/3";
                 this.isLwM2MAttr = true;
                 break;
             case "dojot:firmware_update:update_result":
-                logger.info("result, adding path and setting islwm2mattr to true");
+                logger.debug("result, adding path and setting islwm2mattr to true");
                 this.path = "/5/0/5";
                 this.isLwM2MAttr = true;
                 break;
             case "dojot:firmware_update:update":
-                logger.info("update, adding path and setting islwm2mattr to true");
+                logger.debug("update, adding path and setting islwm2mattr to true");
                 this.path = "/5/0/2";
                 this.isLwM2MAttr = true;
                 this.operations = ResourceModel.Operations.E;
                 break;
             case "dojot:firmware_update:desired_version":
-                logger.info("update, adding path and setting islwm2mattr to true");
+                logger.debug("update, adding path and setting islwm2mattr to true");
                 this.path = "/5/0/1";
                 this.isLwM2MAttr = true;
+                break;
+            case "dojot:firmware_update:version":
+                logger.debug("update, adding path and setting islwm2mattr to true");
+                this.path = "/3/0/3";
+                this.isLwM2MAttr = true;
+                break;
             default:
-                logger.info("Didnt match any dojot:firmware_update");
+                logger.debug("Didnt match any dojot:firmware_update");
         }
     }
 
