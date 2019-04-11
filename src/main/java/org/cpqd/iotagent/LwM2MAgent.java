@@ -48,11 +48,15 @@ public class LwM2MAgent implements Runnable {
 
 
     public LwM2MAgent(long consumerPollTime, ImageDownloader imageDownloader, FileServerPskStore pskStore) {
-        this.eventHandler = new IoTAgent(consumerPollTime);
+        try {
+            this.eventHandler = new IoTAgent(consumerPollTime);
+        }
+        catch (Exception ex) {
+            logger.error("IoT-Agent initialization failed. Bailing out! (" + ex + ")");
+            System.exit(1);
+        }
         this.deviceMapper = new DeviceMapper();
-
         this.securityStore = new InMemorySecurityStore();
-
         this.imageDownloader = imageDownloader;
         this.fsPskStore = pskStore;
 
@@ -80,8 +84,8 @@ public class LwM2MAgent implements Runnable {
      * This method is part of Firmware Update. The first thing to do in a firmware update in LwM2m protocol
      * is send the Package URI to the device. The next step, is wait until the device send that his state
      * has changed to downloaded (state 2), and, then, actuate on the attribute "FWUpdate-Update", that
-     * will trigger the Firmware Update on the device. 
-     * @param registration, newFwVersion, tenant 
+     * will trigger the Firmware Update on the device.
+     * @param registration, newFwVersion, tenant
      * @return
      */
     private Integer sendsUriToDevice(Registration registration, String imageLabel,
@@ -246,7 +250,7 @@ public class LwM2MAgent implements Runnable {
             } catch (NonUniqueSecurityInfoException e) {
                 e.printStackTrace();
                 return null;
-            }			
+            }
          } else {
              logger.debug("device: " + deviceId + " is not using DTLS");
          }
@@ -310,7 +314,7 @@ public class LwM2MAgent implements Runnable {
         } catch (Exception e) {
             // this it not a lwm2m device, just skip it
             return null;
-        }        
+        }
 
         if (device.isSecure()){
             DeviceAttribute pskIdentityAttr = device.getAttributeByPath("/0/0/3");
@@ -367,7 +371,7 @@ public class LwM2MAgent implements Runnable {
                     String imageLabel = devAttr.getTemplateId();
                     logger.info("Image id that came on actuation: " + imageVersion);
                     this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, device.isSecure());
-                    return null; 
+                    return null;
                 }
 
                 if (devAttr.isExecutable()) {
