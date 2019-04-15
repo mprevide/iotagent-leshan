@@ -1,5 +1,8 @@
 FROM zenika/alpine-maven:3-jdk8
 
+RUN apk add --no-cache tini
+ENTRYPOINT ["/sbin/tini", "--"]
+
 RUN mkdir -p /usr/src/app/data
 
 ADD pom.xml /usr/src/app/pom.xml
