@@ -4,35 +4,73 @@ It was written in java and uses [Eclipse Leshan](https://www.eclipse.org/leshan/
 The purpose of this module is to translate device configurations sent to dojot via device-manager
 into LWM2M configuration and commands.
 
-# OMA-LWM2M vs and Device Manager Model:
+# About
 
-Dojot and LwM2M have different device and connection models. 
-For starters, while dojot's device registration is a role of the user,
-in LwM2M the connection is initiated by the device.
+This is an initial version that only supports a sub set of the LwM2M v1.0 features.<br>
+Using this agent you can:
+- monitor LwM2M resources
+- interact with LwM2M resources (write and execute)
+- use DTLS communication (only with PSK)
+- firmware update
+Please note that:
+- LwM2M attributes are not supported
+- multidimensional resources are not supported
 
-To accomodate these diferences a minimum configuration is expected of each device.
-It should provide resources 3/0/1 and 3/0/2, and use the following [template](client/models/lwm2m_base.json):
+# How to create a dojot's device in compliance to this agent
 
-A fuller explanation is available at the [modeling](./docs/modeling.md) docs.
+First of all your device must use the [base template](client/template_lwm2m.json),
+it defines the device's `endpoint` which is the device identifier in the LwM2M protocol.<br>
 
-# Running
+All attributes that you desire to model must contain a metadata with the following
+structure:
+```json
+  "metadata": [
+      ...,
+    {
+      "label": "path",
+      "type": "lwm2m",
+      "value_type": "string",
+      "static_value": "/3303/0/5601"
+    }
+  ]
+```
+Note that the `static_value` reflects the LwM2M resource path, this value must
+be customized.
 
-The IoTAgent is a highly connected component inside the dojot ecosystem, 
-proper usage requires the dojot environment up and running.
-For an in depth guide of running dojot check out this [link](http://dojotdocs.readthedocs.io/en/stable/user_guide.html)
-For a quick setup run the provided docker-compose, starting o version X.X.X
-it should already contain this service:
+This agent uses the following rules to map the resources:
+- dojot dynamic attributes are mapped as LwM2M read resources;
+- dojot actuator attributes are mapped as LwM2M write or execution resources.
 
-    # Clone and bring up the dojot infrastructure with docker compose
-    # Be aware this may take a few minutes (or hours depending on your connection)
-    git clone git@github.com:dojot/docker-compose.git
-    cd docker-compose
-    git checkout X.X.X
-    docker-compose up -d
+The following metadata should be included if your attribute has execution property.
+```json
+  "metadata": [
+      ...,
+    {
+      "type": "lwm2m",
+      "label": "operations",
+      "static_value": "e",
+      "value_type": "string"
+    }
+  ]
+```
 
-We also provide a full example to run it yourself [here](./docs/running.md) along with a
-client [library](./client/iotclient.py) and [cli](./client/client.py).
+# How to encapsulates the service into a Docker container
 
+In order to use this service in the dojot environment we need to encapsulate it
+in a Docker container.<br>
+You can do it just executing the following command:
+```sh
+docker build -t dojot/iotagent-lwm2m .
+```
+Obs: just note that `dojot/iotagent-lwm2m` is the image name, you can replace it
+with some other name that you desire.
 
+# Environment variables
+
+This service relies on some environment variables to configure some aspects.
+These variables are the following ones:
+  - DOJOT_MANAGEMENT_USER:
+  - KAFKA_GROUP_ID:     
+  - FILE_SERVER_ADDRESS:
 
    
