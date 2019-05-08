@@ -6,10 +6,6 @@ import java.util.Date;
 import java.util.LinkedList;
 
 import org.apache.log4j.Logger;
-import org.cpqd.iotagent.Device;
-import org.cpqd.iotagent.DeviceAttribute;
-import org.cpqd.iotagent.ImageDownloader;
-import org.cpqd.iotagent.LwM2mHandler;
 import org.cpqd.iotagent.DeviceMapper.DeviceControlStructure;
 import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.node.LwM2mSingleResource;
@@ -30,7 +26,6 @@ import org.eclipse.leshan.util.Hex;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.cpqd.iotagent.FileServerPskStore;
 
 import br.com.dojot.IoTAgent.IoTAgent;
 import br.com.dojot.utils.Services;
@@ -50,8 +45,7 @@ public class LwM2MAgent implements Runnable {
     public LwM2MAgent(long consumerPollTime, ImageDownloader imageDownloader, FileServerPskStore pskStore) {
         try {
             this.eventHandler = new IoTAgent(consumerPollTime);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             logger.error("IoT-Agent initialization failed. Bailing out! (" + ex + ")");
             System.exit(1);
         }
@@ -72,11 +66,11 @@ public class LwM2MAgent implements Runnable {
      * build a updated vision about the devices
      */
     public boolean bootstrap() {
-    	this.eventHandler.generateDeviceCreateEventForActiveDevices();
-    	return true;
+        this.eventHandler.generateDeviceCreateEventForActiveDevices();
+        return true;
     }
 
-    public void setKeyPskStore(String keyId, String psk){
+    public void setKeyPskStore(String keyId, String psk) {
         this.fsPskStore.setKey(keyId, psk.getBytes());
     }
 
@@ -85,16 +79,17 @@ public class LwM2MAgent implements Runnable {
      * is send the Package URI to the device. The next step, is wait until the device send that his state
      * has changed to downloaded (state 2), and, then, actuate on the attribute "FWUpdate-Update", that
      * will trigger the Firmware Update on the device.
+     *
      * @param registration, newFwVersion, tenant
      * @return
      */
     private Integer sendsUriToDevice(Registration registration, String imageLabel,
-        String newFwVersion, String tenant, boolean isSecure) {
+                                     String newFwVersion, String tenant, boolean isSecure) {
 
         logger.debug("Will try to send URI to device");
 
         //Verification if the fw version is really changing.
-        LwM2mSingleResource currentFwVersionResource = requestHandler.ReadResource(registration, "/3/0/3");
+        LwM2mSingleResource currentFwVersionResource = requestHandler.ReadResource(registration, FirmwareUpdate.PATH_VERSION);
         if (currentFwVersionResource == null) {
             logger.error("Failed to read current firmware version");
             return 0;
@@ -102,8 +97,15 @@ public class LwM2MAgent implements Runnable {
         String currentFwVersion = (String) currentFwVersionResource.getValue();
         logger.debug("Current FW version: " + currentFwVersion);
         logger.debug("Desirable FW version: " + newFwVersion);
+
+        //empty string is written to the Package URI
+        //restart to idle
+        if (newFwVersion == null || newFwVersion.trim().isEmpty()) {
+            requestHandler.WriteResource(registration, FirmwareUpdate.PATH_DESIRED_VERSION, null);
+            return 0;
+        }
         //Gets URL to give it to device if the version is actual changing
-        if(!currentFwVersion.equals(newFwVersion)){
+        if (!currentFwVersion.equals(newFwVersion)) {
             logger.debug("Versions have actual changed");
             String fileUri = null;
             try {
@@ -114,9 +116,8 @@ public class LwM2MAgent implements Runnable {
             }
             logger.debug("Got the file URI: " + fileUri);
             logger.debug("Will write URI in resource package URI");
-            requestHandler.WriteResource(registration, "/5/0/1", fileUri);
-        }
-        else {
+            requestHandler.WriteResource(registration, FirmwareUpdate.PATH_DESIRED_VERSION, fileUri);
+        } else {
             logger.debug("Device already up-to-date");
         }
         return 0;
@@ -128,24 +129,24 @@ public class LwM2MAgent implements Runnable {
 
         switch (resource.getType()) {
             case BOOLEAN:
-                attrJson.put(attr.getLabel(), (Boolean)resource.getValue());
+                attrJson.put(attr.getLabel(), (Boolean) resource.getValue());
                 break;
             case FLOAT:
-                attrJson.put(attr.getLabel(), (Double)resource.getValue());
+                attrJson.put(attr.getLabel(), (Double) resource.getValue());
                 break;
             case INTEGER:
-                attrJson.put(attr.getLabel(), (Long)resource.getValue());
+                attrJson.put(attr.getLabel(), (Long) resource.getValue());
                 break;
             case STRING:
-                attrJson.put(attr.getLabel(), (String)resource.getValue());
+                attrJson.put(attr.getLabel(), (String) resource.getValue());
                 break;
             case TIME:
-                attrJson.put(attr.getLabel(), ((Date)resource.getValue()).toString());
+                attrJson.put(attr.getLabel(), ((Date) resource.getValue()).toString());
                 break;
             case OPAQUE:
-                byte [] data = (byte[])resource.getValue();
+                byte[] data = (byte[]) resource.getValue();
                 if (valueType.equals("interger")) {
-                    switch(data.length) {
+                    switch (data.length) {
                         case 1:
                             Byte b = data[0];
                             attrJson.put(attr.getLabel(), b.intValue());
@@ -161,15 +162,15 @@ public class LwM2MAgent implements Runnable {
                             break;
                         default:
                             logger.error("Attribute " + attr.getLwm2mPath() +
-                                " mapped as integer but received " +
-                                data.length + " bytes.");
+                                    " mapped as integer but received " +
+                                    data.length + " bytes.");
                             throw new Exception();
                     }
                 } else if (valueType.equals("boolean")) {
                     if (data.length != 1) {
                         logger.error("Attribute " + attr.getLwm2mPath() +
-                            " mapped as boolean but received " +
-                            data.length + " bytes.");
+                                " mapped as boolean but received " +
+                                data.length + " bytes.");
                         throw new Exception();
                     }
                     if (data[0] == 1) {
@@ -178,7 +179,7 @@ public class LwM2MAgent implements Runnable {
                         attrJson.put(attr.getLabel(), false);
                     }
                 } else if (valueType.equals("float")) {
-                    switch(data.length) {
+                    switch (data.length) {
                         case 4:
                             attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getFloat());
                             break;
@@ -187,8 +188,8 @@ public class LwM2MAgent implements Runnable {
                             break;
                         default:
                             logger.error("Attribute " + attr.getLwm2mPath() +
-                                " mapped as float but received " +
-                                data.length + " bytes.");
+                                    " mapped as float but received " +
+                                    data.length + " bytes.");
                             throw new Exception();
                     }
                 } else { // we are assuming the others type are string compatible (is it safe?)
@@ -204,13 +205,13 @@ public class LwM2MAgent implements Runnable {
     }
 
     /**
-     * @brief This method is a callback and it is called every time a new device is created. It creates a device
-     * representation, register the security key, if any, and can trigger the observation procedure if applicable
      * @param message
      * @return
+     * @brief This method is a callback and it is called every time a new device is created. It creates a device
+     * representation, register the security key, if any, and can trigger the observation procedure if applicable
      */
     private Void on_create(String tenant, String message) {
-		JSONObject messageObj = new JSONObject(message);
+        JSONObject messageObj = new JSONObject(message);
         logger.debug("on_create: " + messageObj.toString());
 
         // try to build a device representation
@@ -233,14 +234,14 @@ public class LwM2MAgent implements Runnable {
 
         if (device.isSecure()) {
             // '/0/0/5' is the standard path to pre-shared key value
-            DeviceAttribute pskAttr = device.getAttributeByPath("/0/0/5");
+            DeviceAttribute pskAttr = device.getAttributeByPath(FirmwareUpdate.PATH_PRE_SHARED_KEY_VALUE);
             String psk = (String) pskAttr.getStaticValue();
             // '/0/0/3' is the standard path to the pre-shared key identity
-            DeviceAttribute pskIdentityAttr = device.getAttributeByPath("/0/0/3");
+            DeviceAttribute pskIdentityAttr = device.getAttributeByPath(FirmwareUpdate.PATH_PRE_SHARED_KEY_IDENTITY);
             String pskIdentity = (String) pskIdentityAttr.getStaticValue();
             SecurityInfo securityInfo = SecurityInfo.newPreSharedKeyInfo(clientEndpoint,
-                pskIdentity,
-                Hex.decodeHex(psk.toCharArray()));
+                    pskIdentity,
+                    Hex.decodeHex(psk.toCharArray()));
             try {
                 this.securityStore.remove(clientEndpoint);
                 this.securityStore.add(securityInfo);
@@ -251,13 +252,13 @@ public class LwM2MAgent implements Runnable {
                 e.printStackTrace();
                 return null;
             }
-         } else {
-             logger.debug("device: " + deviceId + " is not using DTLS");
-         }
+        } else {
+            logger.debug("device: " + deviceId + " is not using DTLS");
+        }
 
         DeviceControlStructure controlStructure = this.deviceMapper.addNorthboundAssociation(clientEndpoint,
-                                                                                             deviceId,
-                                                                                             tenant);
+                deviceId,
+                tenant);
         if (controlStructure.isSouthboundAssociate()) {
             logger.debug("Observing some attributes");
             this.requestHandler.CancelAllObservations(controlStructure.registration);
@@ -270,7 +271,7 @@ public class LwM2MAgent implements Runnable {
     }
 
     private void observeResources(String deviceId, String tenant,
-        LinkedList<DeviceAttribute> readableAttrs, Registration registration) {
+                                  LinkedList<DeviceAttribute> readableAttrs, Registration registration) {
 
         JSONObject attrJson;
         JSONObject allAttrsJson = new JSONObject();
@@ -316,8 +317,8 @@ public class LwM2MAgent implements Runnable {
             return null;
         }
 
-        if (device.isSecure()){
-            DeviceAttribute pskIdentityAttr = device.getAttributeByPath("/0/0/3");
+        if (device.isSecure()) {
+            DeviceAttribute pskIdentityAttr = device.getAttributeByPath(FirmwareUpdate.PATH_PRE_SHARED_KEY_IDENTITY);
             String pskIdentity = (String) pskIdentityAttr.getStaticValue();
             logger.info("removing pskId from psk store");
             this.fsPskStore.removeKey(pskIdentity);
@@ -366,7 +367,7 @@ public class LwM2MAgent implements Runnable {
                 String path = devAttr.getLwm2mPath();
 
                 // check if it is a firmware update request
-                if (path.equals("/5/0/1")) {
+                if (path.equals(FirmwareUpdate.PATH_DESIRED_VERSION)) {
                     String imageVersion = attrs.getString(targetAttr);
                     String imageLabel = devAttr.getTemplateId();
                     logger.info("Image id that came on actuation: " + imageVersion);
@@ -398,7 +399,7 @@ public class LwM2MAgent implements Runnable {
             logger.debug("registered: " + registration.toString());
 
             DeviceControlStructure controlStructure = deviceMapper.addSouthboundAssociation(registration.getEndpoint(),
-                                                                                            registration);
+                    registration);
             if (controlStructure.isNorthboundAssociate()) {
                 logger.debug("Observing some attributes");
 
@@ -414,7 +415,7 @@ public class LwM2MAgent implements Runnable {
 
                 requestHandler.CancelAllObservations(controlStructure.registration);
                 observeResources(controlStructure.deviceId, controlStructure.tenant,
-                    device.getReadableAttributes(), controlStructure.registration);
+                        device.getReadableAttributes(), controlStructure.registration);
             } else {
                 logger.debug("skpping observing, northbound is not registered yet");
             }
@@ -458,7 +459,7 @@ public class LwM2MAgent implements Runnable {
                 logger.warn("Unsuported content object.");
                 return;
             }
-            LwM2mSingleResource resource = (LwM2mSingleResource)lwm2mNode;
+            LwM2mSingleResource resource = (LwM2mSingleResource) lwm2mNode;
 
             //retrieve device's attribute information
             DeviceControlStructure controlStruture = deviceMapper.getDeviceControlStructure(registration.getEndpoint());
@@ -494,11 +495,11 @@ public class LwM2MAgent implements Runnable {
             try {
                 attrJson = transformLwm2mResourceValueIntoJson(attr, resource);
             } catch (Exception e) {
-                return ;
+                return;
             }
 
             eventHandler.updateAttrs(controlStruture.deviceId,
-                controlStruture.tenant, attrJson, null);
+                    controlStruture.tenant, attrJson, null);
         }
 
         @Override

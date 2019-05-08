@@ -52,7 +52,7 @@ public class Device {
     }
 
     public Boolean isSecure(){
-        DeviceAttribute pskAttr = this.getAttributeByPath("/0/0/5");
+        DeviceAttribute pskAttr = this.getAttributeByPath(FirmwareUpdate.PATH_PRE_SHARED_KEY_VALUE);
         logger.info(pskAttr);
         if (pskAttr != null) {
             if (!pskAttr.getValueType().equals("psk")) {
@@ -64,7 +64,7 @@ public class Device {
                 logger.error("device " + this.deviceId + ": missing psk value. Have you configured it?");
 		return false;
             }
-            DeviceAttribute pskIdentityAttr = this.getAttributeByPath("/0/0/3");
+            DeviceAttribute pskIdentityAttr = this.getAttributeByPath(FirmwareUpdate.PATH_PRE_SHARED_KEY_IDENTITY);
             if(pskIdentityAttr == null) {
                 logger.error("device " + this.deviceId + ": psk is present, but psk identity not");
 		return false;
