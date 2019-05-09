@@ -101,7 +101,8 @@ public class LwM2MAgent implements Runnable {
         //empty string is written to the Package URI
         //restart to idle
         if (newFwVersion == null || newFwVersion.trim().isEmpty()) {
-            requestHandler.WriteResource(registration, FirmwareUpdate.PATH_DESIRED_VERSION, null);
+            logger.debug("Will write Empty in resource package URI and discard transfer");
+            requestHandler.WriteResource(registration, FirmwareUpdate.PATH_DESIRED_VERSION, "");
             return 0;
         }
         //Gets URL to give it to device if the version is actual changing
