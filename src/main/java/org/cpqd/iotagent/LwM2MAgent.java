@@ -1,12 +1,16 @@
 package org.cpqd.iotagent;
 
 import java.nio.ByteBuffer;
+import java.security.Security;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 
 import org.apache.log4j.Logger;
 import org.cpqd.iotagent.DeviceMapper.DeviceControlStructure;
+import org.cpqd.iotagent.lwm2m.objects.DevicePath;
+import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
+import org.cpqd.iotagent.lwm2m.objects.SecurityPath;
 import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.node.LwM2mSingleResource;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
@@ -89,7 +93,7 @@ public class LwM2MAgent implements Runnable {
         logger.debug("Will try to send URI to device");
 
         //Verification if the fw version is really changing.
-        LwM2mSingleResource currentFwVersionResource = requestHandler.ReadResource(registration, FirmwareUpdate.PATH_VERSION);
+        LwM2mSingleResource currentFwVersionResource = requestHandler.ReadResource(registration, DevicePath.FIRMWARE_VERSION);
         if (currentFwVersionResource == null) {
             logger.error("Failed to read current firmware version");
             return 0;
@@ -102,7 +106,7 @@ public class LwM2MAgent implements Runnable {
         //restart to idle
         if (newFwVersion == null || newFwVersion.trim().isEmpty()) {
             logger.debug("Will write Empty in resource package URI and discard transfer");
-            requestHandler.WriteResource(registration, FirmwareUpdate.PATH_DESIRED_VERSION, "");
+            requestHandler.WriteResource(registration, FirmwareUpdatePath.PACKAGE_URI, "");
             return 0;
         }
         //Gets URL to give it to device if the version is actual changing
@@ -117,7 +121,7 @@ public class LwM2MAgent implements Runnable {
             }
             logger.debug("Got the file URI: " + fileUri);
             logger.debug("Will write URI in resource package URI");
-            requestHandler.WriteResource(registration, FirmwareUpdate.PATH_DESIRED_VERSION, fileUri);
+            requestHandler.WriteResource(registration, FirmwareUpdatePath.PACKAGE_URI, fileUri);
         } else {
             logger.debug("Device already up-to-date");
         }
@@ -235,10 +239,10 @@ public class LwM2MAgent implements Runnable {
 
         if (device.isSecure()) {
             // '/0/0/5' is the standard path to pre-shared key value
-            DeviceAttribute pskAttr = device.getAttributeByPath(FirmwareUpdate.PATH_PRE_SHARED_KEY_VALUE);
+            DeviceAttribute pskAttr = device.getAttributeByPath(SecurityPath.PRE_SHARED_SECRET_KEY);
             String psk = (String) pskAttr.getStaticValue();
             // '/0/0/3' is the standard path to the pre-shared key identity
-            DeviceAttribute pskIdentityAttr = device.getAttributeByPath(FirmwareUpdate.PATH_PRE_SHARED_KEY_IDENTITY);
+            DeviceAttribute pskIdentityAttr = device.getAttributeByPath(SecurityPath.PRE_SHARED_KEY_IDENTITY);
             String pskIdentity = (String) pskIdentityAttr.getStaticValue();
             SecurityInfo securityInfo = SecurityInfo.newPreSharedKeyInfo(clientEndpoint,
                     pskIdentity,
@@ -319,7 +323,7 @@ public class LwM2MAgent implements Runnable {
         }
 
         if (device.isSecure()) {
-            DeviceAttribute pskIdentityAttr = device.getAttributeByPath(FirmwareUpdate.PATH_PRE_SHARED_KEY_IDENTITY);
+            DeviceAttribute pskIdentityAttr = device.getAttributeByPath(SecurityPath.PRE_SHARED_KEY_IDENTITY);
             String pskIdentity = (String) pskIdentityAttr.getStaticValue();
             logger.info("removing pskId from psk store");
             this.fsPskStore.removeKey(pskIdentity);
@@ -368,7 +372,7 @@ public class LwM2MAgent implements Runnable {
                 String path = devAttr.getLwm2mPath();
 
                 // check if it is a firmware update request
-                if (path.equals(FirmwareUpdate.PATH_DESIRED_VERSION)) {
+                if (path.equals(FirmwareUpdatePath.PACKAGE_URI)) {
                     String imageVersion = attrs.getString(targetAttr);
                     String imageLabel = devAttr.getTemplateId();
                     logger.info("Image id that came on actuation: " + imageVersion);

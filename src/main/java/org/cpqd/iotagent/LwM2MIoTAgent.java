@@ -10,7 +10,7 @@ public class LwM2MIoTAgent {
 
     public static void main(String[] args) {
         Logger logger = Logger.getLogger(LwM2MIoTAgent.class);
-        logger.info("Starting LwM2M IoTAgent...");
+        logger.info("Starting lwm2m IoTAgent...");
 
         FileServerPskStore securityStore = new FileServerPskStore();
 
@@ -53,7 +53,7 @@ public class LwM2MIoTAgent {
         (new Thread(agent)).start();
 
         while (true) {
-            logger.info("Running LwM2M IoTAgent");
+            logger.info("Running lwm2m IoTAgent");
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException exception) {
