@@ -36,7 +36,7 @@ public class DeviceAttribute {
         } else if (type.equals("dynamic")) {
             this.operations = ResourceModel.Operations.R;
         } else if (type.equals("actuator")) {
-            this.operations = ResourceModel.Operations.RW;
+            this.operations = ResourceModel.Operations.W;
         } else {
             this.operations = ResourceModel.Operations.NONE;
         }
