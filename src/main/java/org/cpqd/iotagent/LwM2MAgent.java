@@ -1,7 +1,6 @@
 package org.cpqd.iotagent;
 
 import java.nio.ByteBuffer;
-import java.security.Security;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
