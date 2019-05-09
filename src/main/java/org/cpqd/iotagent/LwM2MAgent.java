@@ -149,56 +149,7 @@ public class LwM2MAgent implements Runnable {
                 break;
             case OPAQUE:
                 byte[] data = (byte[]) resource.getValue();
-                if (valueType.equals("interger")) {
-                    switch (data.length) {
-                        case 1:
-                            Byte b = data[0];
-                            attrJson.put(attr.getLabel(), b.intValue());
-                            break;
-                        case 2:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getShort());
-                            break;
-                        case 4:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getInt());
-                            break;
-                        case 8:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getLong());
-                            break;
-                        default:
-                            logger.error("Attribute " + attr.getLwm2mPath() +
-                                    " mapped as integer but received " +
-                                    data.length + " bytes.");
-                            throw new Exception();
-                    }
-                } else if (valueType.equals("boolean")) {
-                    if (data.length != 1) {
-                        logger.error("Attribute " + attr.getLwm2mPath() +
-                                " mapped as boolean but received " +
-                                data.length + " bytes.");
-                        throw new Exception();
-                    }
-                    if (data[0] == 1) {
-                        attrJson.put(attr.getLabel(), true);
-                    } else {
-                        attrJson.put(attr.getLabel(), false);
-                    }
-                } else if (valueType.equals("float")) {
-                    switch (data.length) {
-                        case 4:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getFloat());
-                            break;
-                        case 8:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getDouble());
-                            break;
-                        default:
-                            logger.error("Attribute " + attr.getLwm2mPath() +
-                                    " mapped as float but received " +
-                                    data.length + " bytes.");
-                            throw new Exception();
-                    }
-                } else { // we are assuming the others type are string compatible (is it safe?)
-                    attrJson.put(attr.getLabel(), new String(data));
-                }
+                treateOpaqueCases(attr, attrJson, valueType, data);
                 break;
             default:
                 logger.error("Unsupported resource type: " + resource.getType().toString());
@@ -206,6 +157,59 @@ public class LwM2MAgent implements Runnable {
         }
 
         return attrJson;
+    }
+
+    private void treateOpaqueCases(DeviceAttribute attr, JSONObject attrJson, String valueType, byte[] data) throws Exception {
+        if (valueType.equals("interger")) {
+            switch (data.length) {
+                case 1:
+                    Byte b = data[0];
+                    attrJson.put(attr.getLabel(), b.intValue());
+                    break;
+                case 2:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getShort());
+                    break;
+                case 4:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getInt());
+                    break;
+                case 8:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getLong());
+                    break;
+                default:
+                    logger.error("Attribute " + attr.getLwm2mPath() +
+                            " mapped as integer but received " +
+                            data.length + " bytes.");
+                    throw new Exception();
+            }
+        } else if (valueType.equals("boolean")) {
+            if (data.length != 1) {
+                logger.error("Attribute " + attr.getLwm2mPath() +
+                        " mapped as boolean but received " +
+                        data.length + " bytes.");
+                throw new Exception();
+            }
+            if (data[0] == 1) {
+                attrJson.put(attr.getLabel(), true);
+            } else {
+                attrJson.put(attr.getLabel(), false);
+            }
+        } else if (valueType.equals("float")) {
+            switch (data.length) {
+                case 4:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getFloat());
+                    break;
+                case 8:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getDouble());
+                    break;
+                default:
+                    logger.error("Attribute " + attr.getLwm2mPath() +
+                            " mapped as float but received " +
+                            data.length + " bytes.");
+                    throw new Exception();
+            }
+        } else { // we are assuming the others type are string compatible (is it safe?)
+            attrJson.put(attr.getLabel(), new String(data));
+        }
     }
 
     /**
