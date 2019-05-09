@@ -1,11 +1,9 @@
 package org.cpqd.iotagent;
 
-import java.net.SecureCacheResponse;
 import java.util.LinkedList;
 import java.util.Hashtable;
 
 import org.apache.log4j.Logger;
-import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
 import org.cpqd.iotagent.lwm2m.objects.SecurityPath;
 import org.json.JSONArray;
 import org.json.JSONObject;
