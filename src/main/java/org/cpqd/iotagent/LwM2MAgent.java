@@ -149,7 +149,7 @@ public class LwM2MAgent implements Runnable {
                 break;
             case OPAQUE:
                 byte[] data = (byte[]) resource.getValue();
-                treateOpaqueCases(attr, attrJson, valueType, data);
+                transformLwm2mResourceValueIntoJsonOpaqueCases(attr, attrJson, valueType, data);
                 break;
             default:
                 logger.error("Unsupported resource type: " + resource.getType().toString());
@@ -159,7 +159,7 @@ public class LwM2MAgent implements Runnable {
         return attrJson;
     }
 
-    private void treateOpaqueCases(DeviceAttribute attr, JSONObject attrJson, String valueType, byte[] data) throws Exception {
+    private void transformLwm2mResourceValueIntoJsonOpaqueCases(DeviceAttribute attr, JSONObject attrJson, String valueType, byte[] data) throws Exception {
         if (valueType.equals("interger")) {
             switch (data.length) {
                 case 1:
