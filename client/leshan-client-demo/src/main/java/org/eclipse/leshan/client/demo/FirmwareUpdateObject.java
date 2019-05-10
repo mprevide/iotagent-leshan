@@ -33,6 +33,7 @@ public class FirmwareUpdateObject extends BaseInstanceEnabler {
     static final int UR_INITIAL_VALUE = 0;
     static final int UR_SUCCESS = 1;
     static final int UR_FAIL_DOWNLOAD = 4;
+    static final int UR_INTEGRITY_CHECK_FAILED = 5;
 
     private static final Logger LOG = LoggerFactory.getLogger(FirmwareUpdateObject.class);
 
@@ -91,6 +92,7 @@ public class FirmwareUpdateObject extends BaseInstanceEnabler {
         LOG.info("Write on Device Resource " + resourceid + " value " + value);
         switch (resourceid) {
         case 1:
+        try {
             resetUpdateResult();
             setURI((String) value.getValue());
             fireResourcesChange(resourceid);
@@ -107,8 +109,14 @@ public class FirmwareUpdateObject extends BaseInstanceEnabler {
                         } else {
                             setState(STATE_IDLE);
                             fireResourcesChange(RESOURCE_STATE);
-                            setUpdateResult(UR_FAIL_DOWNLOAD);
-                            fireResourcesChange(RESOURCE_UPDATE_RESULT);
+
+                            if(getURI()==null || getURI().isEmpty()){
+                                setUpdateResult(UR_INTEGRITY_CHECK_FAILED);
+                                fireResourcesChange(RESOURCE_UPDATE_RESULT);
+                            }else{
+                                setUpdateResult(UR_FAIL_DOWNLOAD);
+                                fireResourcesChange(RESOURCE_UPDATE_RESULT);
+                            }
                         }
                     } catch (Exception error) {
                         System.out.println(error);
@@ -116,9 +124,18 @@ public class FirmwareUpdateObject extends BaseInstanceEnabler {
 
                 }
             };
+
             Thread t1 = new Thread(r1);
             t1.start();
+
             return WriteResponse.success();
+
+            } catch (Exception e) {
+                LOG.error("Unexpected exception: " + e.getMessage());
+                return WriteResponse.internalServerError("Unexpected error");
+            } 
+            
+           
         default:
             return super.write(resourceid, value);
         }

@@ -4,9 +4,9 @@ import java.util.LinkedList;
 import java.util.Hashtable;
 
 import org.apache.log4j.Logger;
+import org.cpqd.iotagent.lwm2m.objects.SecurityPath;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import com.cpqd.app.auth.Auth;
 
 public class Device {
     Logger logger = Logger.getLogger(Device.class);
@@ -32,7 +32,7 @@ public class Device {
             for (int j = 0; j < templateAttributes.length(); ++j) {
                 DeviceAttribute devAttr = new DeviceAttribute(templateAttributes.getJSONObject(j));
                 if (devAttr.getLabel().equals("client_endpoint")) {
-                    this.endpoint = (String)devAttr.getStaticValue();
+                    this.endpoint = (String) devAttr.getStaticValue();
                 }
                 if (!devAttr.isLwm2mAttr()) {
                     // skip this attribute
@@ -43,7 +43,7 @@ public class Device {
                 }
                 this.mapLwm2mAttributesByLabel.put(devAttr.getLabel(), devAttr);
                 this.mapLwm2mAttributesByPath.put(devAttr.getLwm2mPath(), devAttr);
-             }
+            }
         }
 
         if (this.endpoint == null) {
@@ -51,32 +51,32 @@ public class Device {
         }
     }
 
-    public Boolean isSecure(){
-        DeviceAttribute pskAttr = this.getAttributeByPath("/0/0/5");
+    public Boolean isSecure() {
+        DeviceAttribute pskAttr = this.getAttributeByPath(SecurityPath.PRE_SHARED_SECRET_KEY);
         logger.info(pskAttr);
         if (pskAttr != null) {
             if (!pskAttr.getValueType().equals("psk")) {
-		logger.error("device " + this.deviceId + ": invalid psk value type, it must be 'psk'");
-		return false;
-	    }
+                logger.error("device " + this.deviceId + ": invalid psk value type, it must be 'psk'");
+                return false;
+            }
             String psk = (String) pskAttr.getStaticValue();
-            if(psk == null) {
+            if (psk == null) {
                 logger.error("device " + this.deviceId + ": missing psk value. Have you configured it?");
-		return false;
+                return false;
             }
-            DeviceAttribute pskIdentityAttr = this.getAttributeByPath("/0/0/3");
-            if(pskIdentityAttr == null) {
+            DeviceAttribute pskIdentityAttr = this.getAttributeByPath(SecurityPath.PRE_SHARED_KEY_IDENTITY);
+            if (pskIdentityAttr == null) {
                 logger.error("device " + this.deviceId + ": psk is present, but psk identity not");
-		return false;
+                return false;
             }
-            if(!pskIdentityAttr.getValueType().equals("string")){
+            if (!pskIdentityAttr.getValueType().equals("string")) {
                 logger.error("device " + this.deviceId + ": invalid psk identity value type, it must be 'string'");
-		return false;
+                return false;
             }
             String pskIdentity = (String) pskIdentityAttr.getStaticValue();
             if (pskIdentity == null) {
                 logger.error("device " + this.deviceId + ": missing psk identity configuration. Have you configured it?");
-		return false;
+                return false;
             }
             return true;
         } else {

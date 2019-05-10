@@ -1,6 +1,8 @@
 package org.cpqd.iotagent;
 
 import org.apache.commons.lang3.StringUtils;
+import org.cpqd.iotagent.lwm2m.objects.DevicePath;
+import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
 import org.eclipse.leshan.core.model.ResourceModel;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -64,31 +66,31 @@ public class DeviceAttribute {
 
     private void addPathOpMeta(String label) {
         logger.debug("This is the label: " + label);
-        switch(label) {
+        switch (label) {
             case "dojot:firmware_update:state":
                 logger.debug("state, adding path and setting islwm2mattr to true");
-                this.path = "/5/0/3";
+                this.path = FirmwareUpdatePath.STATE;
                 this.isLwM2MAttr = true;
                 break;
             case "dojot:firmware_update:update_result":
                 logger.debug("result, adding path and setting islwm2mattr to true");
-                this.path = "/5/0/5";
+                this.path = FirmwareUpdatePath.UPDATE_RESULT;
                 this.isLwM2MAttr = true;
                 break;
             case "dojot:firmware_update:update":
                 logger.debug("update, adding path and setting islwm2mattr to true");
-                this.path = "/5/0/2";
+                this.path = FirmwareUpdatePath.UPDATE;
                 this.isLwM2MAttr = true;
                 this.operations = ResourceModel.Operations.E;
                 break;
             case "dojot:firmware_update:desired_version":
                 logger.debug("update, adding path and setting islwm2mattr to true");
-                this.path = "/5/0/1";
+                this.path = FirmwareUpdatePath.PACKAGE_URI;
                 this.isLwM2MAttr = true;
                 break;
             case "dojot:firmware_update:version":
                 logger.debug("update, adding path and setting islwm2mattr to true");
-                this.path = "/3/0/3";
+                this.path = DevicePath.FIRMWARE_VERSION;
                 this.isLwM2MAttr = true;
                 break;
             default:

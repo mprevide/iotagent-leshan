@@ -3,17 +3,14 @@ package org.cpqd.iotagent;
 import java.io.File;
 
 import org.apache.log4j.Logger;
-import org.cpqd.iotagent.LwM2MAgent;
 import org.eclipse.californium.core.network.config.NetworkConfig;
-import org.cpqd.iotagent.FileServerPskStore;
-import org.cpqd.iotagent.ImageDownloader;
 import com.cpqd.app.config.Config;
 
 public class LwM2MIoTAgent {
 
     public static void main(String[] args) {
         Logger logger = Logger.getLogger(LwM2MIoTAgent.class);
-        logger.info("Starting LwM2M IoTAgent...");
+        logger.info("Starting lwm2m IoTAgent...");
 
         FileServerPskStore securityStore = new FileServerPskStore();
 
@@ -25,9 +22,9 @@ public class LwM2MIoTAgent {
 
         String fileServerAddress;
 
-        if(System.getenv("FILE_SERVER_ADDRESS") == null ){
-            logger.fatal("Missing file server address configuration." + 
-                "Please check if the 'FILE_SERVER_ADDRESS' if setted");
+        if (System.getenv("FILE_SERVER_ADDRESS") == null) {
+            logger.fatal("Missing file server address configuration." +
+                    "Please check if the 'FILE_SERVER_ADDRESS' if setted");
             System.exit(1);
         }
         fileServerAddress = System.getenv("FILE_SERVER_ADDRESS");
@@ -35,17 +32,18 @@ public class LwM2MIoTAgent {
         Config dojotConfig = Config.getInstance();
         String dataDir = "data";
         ImageDownloader imageDownloader = new ImageDownloader(
-            "http://" + dojotConfig.getImageManagerAddress(), dataDir,
-            fileServerAddress, coapPort, secureCoapPort);
+                "http://" + dojotConfig.getImageManagerAddress(), dataDir,
+                fileServerAddress, coapPort, secureCoapPort);
+
 
         Long consumerPollTime = dojotConfig.getKafkaDefaultConsumerPollTime();
-        
+
         LwM2MAgent agent = new LwM2MAgent(consumerPollTime, imageDownloader, securityStore);
 
         boolean bootstraped = agent.bootstrap();
         if (!bootstraped) {
-        	logger.error("Failed on bootstrap");
-        	System.exit(1);
+            logger.error("Failed on bootstrap");
+            System.exit(1);
         }
 
         SimpleFileServer fileServer = new SimpleFileServer(coapConfigFile, securityStore);
@@ -55,7 +53,7 @@ public class LwM2MIoTAgent {
         (new Thread(agent)).start();
 
         while (true) {
-            logger.info("Running LwM2M IoTAgent");
+            logger.info("Running lwm2m IoTAgent");
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException exception) {
