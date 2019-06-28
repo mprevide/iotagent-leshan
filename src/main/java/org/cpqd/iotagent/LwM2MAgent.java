@@ -4,14 +4,18 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Vector;
 
 import org.apache.log4j.Logger;
 import org.cpqd.iotagent.DeviceMapper.DeviceControlStructure;
 import org.cpqd.iotagent.lwm2m.objects.DevicePath;
 import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
 import org.cpqd.iotagent.lwm2m.objects.SecurityPath;
+import org.eclipse.leshan.core.node.LwM2mMultipleResource;
 import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.node.LwM2mSingleResource;
+import org.eclipse.leshan.core.node.LwM2mResource;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
 import org.eclipse.leshan.core.observation.Observation;
@@ -86,8 +90,8 @@ public class LwM2MAgent implements Runnable {
      * @param registration, newFwVersion, tenant
      * @return
      */
-    private Integer sendsUriToDevice(Registration registration, String imageLabel,
-                                     String newFwVersion, String tenant, boolean isSecure) {
+    private void sendsUriToDevice(Registration registration, String imageLabel,
+                                     String newFwVersion, String tenant, boolean isDeviceSecure) {
 
         logger.debug("Will try to send URI to device");
 
@@ -95,7 +99,7 @@ public class LwM2MAgent implements Runnable {
         LwM2mSingleResource currentFwVersionResource = requestHandler.ReadResource(registration, DevicePath.FIRMWARE_VERSION);
         if (currentFwVersionResource == null) {
             logger.error("Failed to read current firmware version");
-            return 0;
+            return;
         }
         String currentFwVersion = (String) currentFwVersionResource.getValue();
         logger.debug("Current FW version: " + currentFwVersion);
@@ -106,17 +110,38 @@ public class LwM2MAgent implements Runnable {
         if (newFwVersion == null || newFwVersion.trim().isEmpty()) {
             logger.debug("Will write Empty in resource package URI and discard transfer");
             requestHandler.WriteResource(registration, FirmwareUpdatePath.PACKAGE_URI, "");
-            return 0;
+            return;
         }
         //Gets URL to give it to device if the version is actual changing
         if (!currentFwVersion.equals(newFwVersion)) {
             logger.debug("Versions have actual changed");
+
+            // Verify the supported protocol
+            LwM2mMultipleResource supportedProtocolResource = requestHandler.ReadMultipleResource(registration, FirmwareUpdatePath.FIRMWARE_UPDATE_PROTOCOL_SUPPORT);
+            if (supportedProtocolResource == null) {
+                logger.error("Failed to read the supported protocol to execute the firmware update");
+                return;
+            }
+            Map<Integer, ?> protocolMap = supportedProtocolResource.getValues();
+            Vector<Integer> supportedProtocols = new Vector<Integer>();
+            for (Map.Entry<Integer, ?> entry : protocolMap.entrySet()) {
+                supportedProtocols.add((Integer)((Long)entry.getValue()).intValue());
+            }
+
+            int supportedProtocol = 0;
+            try {                
+               supportedProtocol = selectFirmwareUpdateProtocol(supportedProtocols, isDeviceSecure);
+            } catch (Exception e) {
+                logger.warn(e.toString());
+                return;
+            }
+
             String fileUri = null;
             try {
-                fileUri = imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion, isSecure);
+                fileUri = imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion, supportedProtocol);
             } catch (Exception e) {
                 logger.error(e.getMessage());
-                return 0;
+                return;
             }
             logger.debug("Got the file URI: " + fileUri);
             logger.debug("Will write URI in resource package URI");
@@ -124,12 +149,58 @@ public class LwM2MAgent implements Runnable {
         } else {
             logger.debug("Device already up-to-date");
         }
-        return 0;
+        return;
     }
 
-    private JSONObject transformLwm2mResourceValueIntoJson(DeviceAttribute attr, LwM2mSingleResource resource) throws Exception {
+    private int selectFirmwareUpdateProtocol(Vector<Integer> supportedProtocols, boolean isDeviceSecure) {
+        boolean isCoapSupported = false;
+        boolean isCoapsSupported = false;
+        boolean isHttpSupported = false;
+        boolean isHttpsSupported = false;
+        
+        for (int i = 0; i < supportedProtocols.size(); ++i) {
+            switch(supportedProtocols.get(i)) {
+                case FirmwareUpdatePath.PROTOCOL_COAP:
+                    isCoapSupported = true;
+                    break;
+                case FirmwareUpdatePath.PROTOCOL_COAPS:
+                    isCoapsSupported = true;
+                    break;
+                case FirmwareUpdatePath.PROTOCOL_HTTP:
+                    isHttpSupported = true;
+                    break;
+                case FirmwareUpdatePath.PROTOCOL_HTTPS:
+                    isHttpsSupported = true;
+                    break;
+            }
+        }
+
+        if ((isDeviceSecure) && (isHttpsSupported)) {
+            return FirmwareUpdatePath.PROTOCOL_HTTPS;
+        }
+        if ((isDeviceSecure) && (isCoapsSupported)) {
+            return FirmwareUpdatePath.PROTOCOL_COAPS;
+        }
+        if (isHttpSupported) {
+            return FirmwareUpdatePath.PROTOCOL_HTTP;
+        }
+        if (isCoapSupported) {
+            return FirmwareUpdatePath.PROTOCOL_COAP;
+        }
+
+        throw new RuntimeException("Cannot define a protocol");
+    }
+
+    private JSONObject transformLwm2mResourceValueIntoJson(DeviceAttribute attr, LwM2mResource resource) throws Exception {
         JSONObject attrJson = new JSONObject();
         String valueType = attr.getValueType();
+
+        if (resource.isMultiInstances()) {
+            String resourceData = String.format("LwM2mMultipleResource [values=%s, type=%s]",
+                resource.getValues().toString(), resource.getType().toString());
+            attrJson.put(attr.getLabel(), resourceData);
+            return attrJson;
+        }
 
         switch (resource.getType()) {
             case BOOLEAN:
@@ -287,7 +358,7 @@ public class LwM2MAgent implements Runnable {
             String path = attr.getLwm2mPath();
             logger.debug("Observing: " + attr.getLabel());
             try {
-                LwM2mSingleResource resource = requestHandler.ObserveResource(registration, path);
+                LwM2mResource resource = requestHandler.ObserveResource(registration, path);
                 if (resource == null) {
                     throw new Exception();
                 }
@@ -376,11 +447,24 @@ public class LwM2MAgent implements Runnable {
 
                 // check if it is a firmware update request
                 if (path.equals(FirmwareUpdatePath.PACKAGE_URI)) {
+
+                    // Verify if the device supports this delivery method
+                    LwM2mSingleResource deliveryMethodResource = requestHandler.ReadResource(controlStruture.registration, FirmwareUpdatePath.FIRMWARE_UPDATE_DELIVERY_METHOD);
+                    if (deliveryMethodResource == null) {
+                        logger.error("Failed to read the supported delivert method to transfer firmware image");
+                        continue;
+                    }
+                    int deliveryMethod = (int)(long) deliveryMethodResource.getValue();
+                    if (deliveryMethod == FirmwareUpdatePath.DELIVERY_METHOD_PUSH) {
+                        logger.error("This device only supports delivery method push. The URI will not be send to the device.");
+                        continue;
+                    }
+
                     String imageVersion = attrs.getString(targetAttr);
                     String imageLabel = devAttr.getTemplateId();
                     logger.info("Image id that came on actuation: " + imageVersion);
                     this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, device.isSecure());
-                    return null;
+                    continue;
                 }
 
                 if (devAttr.isExecutable()) {
@@ -463,11 +547,11 @@ public class LwM2MAgent implements Runnable {
                 logger.warn("Response is null. Skipping it");
                 return;
             }
-            if (!(lwm2mNode instanceof LwM2mSingleResource)) {
+            if (!(lwm2mNode instanceof LwM2mResource)) {
                 logger.warn("Unsuported content object.");
                 return;
             }
-            LwM2mSingleResource resource = (LwM2mSingleResource) lwm2mNode;
+            LwM2mResource resource = (LwM2mResource) lwm2mNode;
 
             //retrieve device's attribute information
             DeviceControlStructure controlStruture = deviceMapper.getDeviceControlStructure(registration.getEndpoint());

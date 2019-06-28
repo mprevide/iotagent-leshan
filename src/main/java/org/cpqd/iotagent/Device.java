@@ -53,7 +53,6 @@ public class Device {
 
     public Boolean isSecure() {
         DeviceAttribute pskAttr = this.getAttributeByPath(SecurityPath.PRE_SHARED_SECRET_KEY);
-        logger.info(pskAttr);
         if (pskAttr != null) {
             if (!pskAttr.getValueType().equals("psk")) {
                 logger.error("device " + this.deviceId + ": invalid psk value type, it must be 'psk'");

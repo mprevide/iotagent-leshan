@@ -110,6 +110,7 @@ public class LeshanClientDemo {
                 "Set the local CoAP port of the Client.\n  Default: A valid port value is between 0 and 65535.");
         options.addOption("u", true, String.format("Set the LWM2M or Bootstrap server URL.\nDefault: localhost:%d.",
                 LwM2m.DEFAULT_COAP_PORT));
+        options.addOption("protocols", true, "Configure the protocols supported during the firmware update. Possible values: coap, coaps, http and https (default: coap). Multiple values are allow separed by comma");
         options.addOption("pos", true,
                 "Set the initial location (latitude, longitude) of the device to be reported by the Location object.\n Format: lat_float:long_float");
         options.addOption("sf", true, "Scale factor to apply when shifting position.\n Default is 1.0." + PSKChapter);
@@ -303,10 +304,21 @@ public class LeshanClientDemo {
                 return;
             }
         }
+
+        // get firmware update protocol
+        String[] firmwareUpdateProtocols;
+        if (cl.hasOption("protocols")) {
+            String value = cl.getOptionValue("protocols");
+            firmwareUpdateProtocols = value.split(",");
+        } else {
+            firmwareUpdateProtocols = new String[1];
+            firmwareUpdateProtocols[0] = new String("coap");
+        }
+
         try {
             createAndStartClient(endpoint, localAddress, localPort, cl.hasOption("b"), serverURI, pskIdentity, pskKey,
                     clientPrivateKey, clientPublicKey, serverPublicKey, clientCertificate, serverCertificate, latitude,
-                    longitude, scaleFactor);
+                    longitude, scaleFactor, firmwareUpdateProtocols);
         } catch (Exception e) {
             System.err.println("Unable to create and start client ...");
             e.printStackTrace();
@@ -317,7 +329,7 @@ public class LeshanClientDemo {
     public static void createAndStartClient(String endpoint, String localAddress, int localPort, boolean needBootstrap,
             String serverURI, byte[] pskIdentity, byte[] pskKey, PrivateKey clientPrivateKey, PublicKey clientPublicKey,
             PublicKey serverPublicKey, X509Certificate clientCertificate, X509Certificate serverCertificate,
-            Float latitude, Float longitude, float scaleFactor) throws CertificateEncodingException {
+            Float latitude, Float longitude, float scaleFactor, String[] firmwareUpdateProtocols) throws CertificateEncodingException {
 
         locationInstance = new MyLocation(latitude, longitude, scaleFactor);
 
@@ -363,7 +375,7 @@ public class LeshanClientDemo {
         initializer.setClassForObject(DEVICE, MyDevice.class);
         initializer.setInstancesForObject(LOCATION, locationInstance);
         initializer.setInstancesForObject(OBJECT_ID_TEMPERATURE_SENSOR, new RandomTemperatureSensor());
-        initializer.setInstancesForObject(OBJECT_ID_FIRMWARE_UPDATE, new FirmwareUpdateObject());
+        initializer.setInstancesForObject(OBJECT_ID_FIRMWARE_UPDATE, new FirmwareUpdateObject(firmwareUpdateProtocols));
         List<LwM2mObjectEnabler> enablers = initializer.create(SECURITY, SERVER, DEVICE, LOCATION,
                 OBJECT_ID_TEMPERATURE_SENSOR, OBJECT_ID_FIRMWARE_UPDATE);
 

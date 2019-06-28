@@ -36,4 +36,33 @@ public class FirmwareUpdatePath {
      */
     public static final String UPDATE_RESULT = "/5/0/5";
 
+    /**
+     * This resource indicates what protocols the LwM2M Client implements to
+     * retrieve firmware images.
+     */
+    public static final String FIRMWARE_UPDATE_PROTOCOL_SUPPORT = "/5/0/8";
+
+    /**
+     * The LwM2M Client uses this resource to indicate its support for transferring firmware
+     * images to the client either via the Package Resource (=push) or via the Package URI
+     * Resource (=pull) mechanism.
+     */
+    public static final String FIRMWARE_UPDATE_DELIVERY_METHOD = "/5/0/9";
+
+    /**
+     * Values that represents the supported protocol to execute the firmware
+     * update process
+     */
+    public static final int PROTOCOL_COAP = 0;
+    public static final int PROTOCOL_COAPS = 1;
+    public static final int PROTOCOL_HTTP = 2;
+    public static final int PROTOCOL_HTTPS = 3;
+
+    /**
+     * Values that represents the supported delivery method to transfer the firmware
+     * image
+     */
+    public static final int DELIVERY_METHOD_PULL = 0;
+    public static final int DELIVERY_METHOD_PUSH = 1;
+    public static final int DELIVERY_METHOD_BOTH = 2;
 }

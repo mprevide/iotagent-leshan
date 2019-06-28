@@ -13,7 +13,7 @@ iotc = IotClient()
 
 template_lwm2m = iotc.create_template(load_template("template_lwm2m.json"))
 template_temp_sensor = iotc.create_template(load_template("models/3303.json"))
-template_fw_update = iotc.create_template(load_template("firmware_update.json"))
+template_fw_update = iotc.create_template(load_template("template_firmware_update.json"))
 
 device_endpoint = "unsecure-client-endpoint"
 device_payload_base = {
@@ -33,7 +33,7 @@ device_payload_base = {
     "label": "unsecure-dev"
 }
 
-for i in range(0, 3):
+for i in range(0, 1):
 	print("---")
 	device_payload = copy.deepcopy(device_payload_base)
 	device_payload['label'] += '-' + str(i)

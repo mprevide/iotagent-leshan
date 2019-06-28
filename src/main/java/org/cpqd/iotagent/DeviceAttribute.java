@@ -65,31 +65,25 @@ public class DeviceAttribute {
     }
 
     private void addPathOpMeta(String label) {
-        logger.debug("This is the label: " + label);
         switch (label) {
             case "dojot:firmware_update:state":
-                logger.debug("state, adding path and setting islwm2mattr to true");
                 this.path = FirmwareUpdatePath.STATE;
                 this.isLwM2MAttr = true;
                 break;
             case "dojot:firmware_update:update_result":
-                logger.debug("result, adding path and setting islwm2mattr to true");
                 this.path = FirmwareUpdatePath.UPDATE_RESULT;
                 this.isLwM2MAttr = true;
                 break;
             case "dojot:firmware_update:update":
-                logger.debug("update, adding path and setting islwm2mattr to true");
                 this.path = FirmwareUpdatePath.UPDATE;
                 this.isLwM2MAttr = true;
                 this.operations = ResourceModel.Operations.E;
                 break;
             case "dojot:firmware_update:desired_version":
-                logger.debug("update, adding path and setting islwm2mattr to true");
                 this.path = FirmwareUpdatePath.PACKAGE_URI;
                 this.isLwM2MAttr = true;
                 break;
             case "dojot:firmware_update:version":
-                logger.debug("update, adding path and setting islwm2mattr to true");
                 this.path = DevicePath.FIRMWARE_VERSION;
                 this.isLwM2MAttr = true;
                 break;
