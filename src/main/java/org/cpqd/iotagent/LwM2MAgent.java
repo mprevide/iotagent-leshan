@@ -172,6 +172,8 @@ public class LwM2MAgent implements Runnable {
                 case FirmwareUpdatePath.PROTOCOL_HTTPS:
                     isHttpsSupported = true;
                     break;
+                default:
+                    break;
             }
         }
 
