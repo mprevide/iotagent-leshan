@@ -1,15 +1,16 @@
 /**
  * A simple HTTP file server.
- * Implementation based on MG4J implementation:
- * https://raw.githubusercontent.com/bantudb/mg4j/master/src/it/unimi/di/big/mg4j/query/HttpFileServer.java
- * accessed on 25 jun 2019
+ * Implementation based on jetty documentation:
+ * https://www.eclipse.org/jetty/documentation/current/embedded-examples.html#embedded-file-server
+ * accessed on 20 ago 2019
  */
 package org.cpqd.iotagent;
 
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.ResourceHandler;
-import org.mortbay.jetty.handler.ContextHandler;
-import org.mortbay.jetty.bio.SocketConnector;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 
 
 public class SimpleFileServerHttp extends Thread {
@@ -30,26 +31,21 @@ public class SimpleFileServerHttp extends Thread {
     public void run() {
         try {
             // Create the server
-            this.mServer = new Server();
+            this.mServer = new Server(this.mServerPort);
 
-            // Create a port listener
-            SocketConnector connector = new SocketConnector();
-            connector.setPort(this.mServerPort);
-            this.mServer.addConnector(connector);
-
-            // Create a context
-            ContextHandler context = new ContextHandler();
-            context.setContextPath("/");
-            context.setResourceBase(this.mDataPath);
-
-            // Add a resource handler
             ResourceHandler resourceHandler = new ResourceHandler();
-            context.addHandler(resourceHandler);
-            
-            this.mServer.addHandler(context);
+
+            resourceHandler.setDirectoriesListed(true);
+
+            resourceHandler.setResourceBase(this.mDataPath);
+
+            HandlerList handlers = new HandlerList();
+            handlers.setHandlers(new Handler[]{resourceHandler, new DefaultHandler()});
+            this.mServer.setHandler(handlers);
 
             // Start the http server
-            mServer.start();
+            this.mServer.start();
+            this.mServer.join();
         } catch ( Exception e ) {
             throw new RuntimeException();
         }
