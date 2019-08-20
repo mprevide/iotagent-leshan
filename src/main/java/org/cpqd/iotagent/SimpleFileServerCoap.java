@@ -43,10 +43,10 @@ import org.eclipse.californium.scandium.dtls.pskstore.PskStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SimpleFileServer extends CoapServer {
-	private static final Logger LOG = LoggerFactory.getLogger(SimpleFileServer.class.getName());
+public class SimpleFileServerCoap extends CoapServer {
+	private static final Logger LOG = LoggerFactory.getLogger(SimpleFileServerCoap.class.getName());
 
-	public SimpleFileServer(File coapConfigFile, PskStore pskStore) {
+	public SimpleFileServerCoap(File coapConfigFile, PskStore pskStore) {
 		NetworkConfig netConfig = NetworkConfig.createStandardWithFile(coapConfigFile);
 		
 		int coapPort = netConfig.getInt(NetworkConfig.Keys.COAP_PORT);

@@ -4,6 +4,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import org.apache.log4j.Logger;
+import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -21,57 +22,82 @@ import com.cpqd.app.auth.Auth;
 
 public class ImageDownloader {
     private Logger mLogger = Logger.getLogger(ImageDownloader.class);
-
+    
     private String mImageManagerUri;
     private String mFileServerAddress;
-    private String mFileServerUnsecurePort;
-    private String mFileServerSecurePort;
+    private String mCoapPort;
+    private String mCoapsPort;
+    private String mHttpPort;
+    private String mHttpsPort;
     private String mDataDir;
     private static final String IMAGE_EXTENSION = ".hex";
 
-    public ImageDownloader(String imageManagerUri, String dataDir,
-        String fileServerAddress, int fileServerUnsecurePort, int fileServerSecurePort) {
+    public ImageDownloader(String imageManagerUri, String dataDir, 
+        String fileServerAddress, int coapPort, int coapsPort,
+        int httpPort, int httpsPort) {
 
         this.mImageManagerUri = imageManagerUri + "/image";
         this.mFileServerAddress = fileServerAddress;
-        this.mFileServerUnsecurePort = Integer.toString(fileServerUnsecurePort);
-        this.mFileServerSecurePort = Integer.toString(fileServerSecurePort);
+        this.mCoapPort = Integer.toString(coapPort);
+        this.mCoapsPort = Integer.toString(coapsPort);
+        this.mHttpPort = Integer.toString(httpPort);
+        this.mHttpsPort = Integer.toString(httpsPort);
         this.mDataDir = dataDir;
     }
 
     public String downloadImageAndGenerateUri(String tenant, String imageLabel,
-        String version, boolean isSecure) {
+        String version, int protocol) {
 
-        String imageFile = null;
+        String imageFilename = null;
         try {
-            imageFile = this.fetchImage(tenant, imageLabel, version);
+            imageFilename = this.fetchImage(tenant, imageLabel, version);
         } catch (Exception e) {
             this.mLogger.error(e.getMessage());
             throw new RuntimeException("Failed to download and generate URI");
         }
 
-        if (isSecure) {
-            return "coaps://" + this.mFileServerAddress + ":" +
-                this.mFileServerSecurePort + "/" + this.mDataDir + "/" + imageFile;
+        String uri;
+        switch(protocol) {
+            case FirmwareUpdatePath.PROTOCOL_COAP:
+                uri = "coap://" + this.mFileServerAddress + ":" + this.mCoapPort +
+                    "/" + imageFilename;
+            break;
+            case FirmwareUpdatePath.PROTOCOL_COAPS:
+                uri = "coaps://" + this.mFileServerAddress + ":" + this.mCoapsPort +
+                    "/" + imageFilename;
+            break;
+            case FirmwareUpdatePath.PROTOCOL_HTTP:
+                uri = "http://" + this.mFileServerAddress + ":" + this.mHttpPort +
+                    "/" + imageFilename;
+            break;
+            case FirmwareUpdatePath.PROTOCOL_HTTPS:
+                uri = "https://" + this.mFileServerAddress + ":" + this.mHttpsPort +
+                    "/" + imageFilename;
+                this.mLogger.error("HTTPS is not supported yet");
+                throw new RuntimeException("HTTPS is not supported yet");
+            default:
+                this.mLogger.error("Unknown protocol: " + protocol);
+                throw new RuntimeException("Failed to generate URI");
         }
-        return "coap://" + this.mFileServerAddress + ":" +
-            this.mFileServerUnsecurePort + "/" + this.mDataDir + "/" + imageFile;
+        return uri;
     }
 
     private String fetchImage(String tenant, String imageLabel, String version) throws RuntimeException {
 
         String imageId = null;
         this.mLogger.debug("Fetching image with label: " + imageLabel + " at version " + version);
+        String filename = null;
         try {
             String token = Auth.getInstance().getToken(tenant);
             imageId = this.getImageId(imageLabel, version, token);
-            this.downloadImage(imageId, tenant + "-" + imageId + IMAGE_EXTENSION, token);
+            filename = tenant + "-" + imageId + IMAGE_EXTENSION;
+            this.downloadImage(imageId, filename, token);
         } catch (Exception e) {
             this.mLogger.error(e.getMessage());
             throw new RuntimeException("Failed to fetch image");
         }
 
-        return tenant + "-" + imageId + IMAGE_EXTENSION;
+        return filename;
     }
 
     private String getImageId(String imageLabel, String version, String token) throws RuntimeException {
@@ -113,9 +139,9 @@ public class ImageDownloader {
                     "Http status: " + Integer.toString(fwInStream.getStatus()));
             } else {
                 InputStream in = fwInStream.getBody();
-                Path path = FileSystems.getDefault().getPath("./" + this.mDataDir + "/" + filename);
+                Path path = FileSystems.getDefault().getPath(this.mDataDir + "/" + filename);
 
-                Path DestinationPath = FileSystems.getDefault().getPath("./" + this.mDataDir);
+                Path DestinationPath = FileSystems.getDefault().getPath(this.mDataDir);
                 if (!Files.exists(DestinationPath)) {
                     Files.createDirectory(DestinationPath);
                 }
