@@ -311,7 +311,7 @@ public class LwM2MAgent implements Runnable {
         String clientEndpoint = device.getClientEndpoint();
 
         Services iotAgent = Services.getInstance();
-        iotAgent.addDeviceToCache(tenant + ":" + deviceId, messageObj);
+        iotAgent.addDeviceToCache(tenant, deviceId, messageObj.getJSONObject("data"));
 
         if (device.isSecure()) {
             // '/0/0/5' is the standard path to pre-shared key value
@@ -382,7 +382,7 @@ public class LwM2MAgent implements Runnable {
             deviceId = messageObj.getJSONObject("data").getString("id");
 
             Services iotAgent = Services.getInstance();
-            iotAgent.removeDeviceFromCache(tenant + ":" + deviceId);
+            iotAgent.removeDeviceFromCache(tenant, deviceId);
         } catch (Exception e) {
             logger.error("Failed to clear cache, agent can have misbehavior");
         }
@@ -498,12 +498,16 @@ public class LwM2MAgent implements Runnable {
                 logger.debug("Observing some attributes");
 
                 Services iotAgent = Services.getInstance();
-                JSONObject cachedDev = iotAgent.getDevice(controlStructure.deviceId, controlStructure.tenant);
+                JSONObject deviceJson = iotAgent.getDevice(controlStructure.deviceId, controlStructure.tenant);
+                if (deviceJson == null) {
+                    logger.warn("Device " + controlStructure.deviceId + " has not found");
+                    return;
+                }
                 Device device;
                 try {
-                    device = new Device(cachedDev);
+                    device = new Device(deviceJson);
                 } catch (Exception e) {
-                    logger.error("Unexpected situation");
+                    logger.error("Unexpected situation: " + e.toString());
                     return;
                 }
 
@@ -556,19 +560,19 @@ public class LwM2MAgent implements Runnable {
             LwM2mResource resource = (LwM2mResource) lwm2mNode;
 
             //retrieve device's attribute information
-            DeviceControlStructure controlStruture = deviceMapper.getDeviceControlStructure(registration.getEndpoint());
-            if (controlStruture == null) {
+            DeviceControlStructure controlStructure = deviceMapper.getDeviceControlStructure(registration.getEndpoint());
+            if (controlStructure == null) {
                 logger.warn("Unknown endpoint: " + registration.getEndpoint());
                 return;
             }
-            if (!controlStruture.isNorthboundAssociate()) {
+            if (!controlStructure.isNorthboundAssociate()) {
                 logger.warn("There is not device associate yet with the endpoint: " + registration.getEndpoint());
                 return;
             }
             Services iotAgent = Services.getInstance();
-            JSONObject deviceJson = iotAgent.getDevice(controlStruture.deviceId, controlStruture.tenant);
+            JSONObject deviceJson = iotAgent.getDevice(controlStructure.deviceId, controlStructure.tenant);
             if (deviceJson == null) {
-                logger.warn("Device " + controlStruture.deviceId + " has not found");
+                logger.warn("Device " + controlStructure.deviceId + " has not found");
                 return;
             }
 
@@ -592,8 +596,8 @@ public class LwM2MAgent implements Runnable {
                 return;
             }
 
-            eventHandler.updateAttrs(controlStruture.deviceId,
-                    controlStruture.tenant, attrJson, null);
+            eventHandler.updateAttrs(controlStructure.deviceId,
+                controlStructure.tenant, attrJson, null);
         }
 
         @Override

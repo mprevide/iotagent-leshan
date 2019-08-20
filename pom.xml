@@ -131,7 +131,7 @@
         <dependency>
             <groupId>com.github.dojot</groupId>
             <artifactId>iotagent-java</artifactId>
-            <version>da6f509334a4d34af66adab41feb27c082445c1f</version>
+            <version>9235705b17ae4a9ca75c1109102cf176c9ce328f</version>
         </dependency>
         <dependency>
             <groupId>com.github.dojot</groupId>
