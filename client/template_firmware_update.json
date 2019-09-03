@@ -1,8 +1,8 @@
 {
-  "label": "Firmware Update",
+  "label": "firmware_update",
   "attrs": [
     {
-      "label": "FWUpdate-PackageURI",
+      "label": "fwu_package_uri",
       "type": "actuator",
       "value_type": "string",
       "metadata": [
@@ -21,7 +21,7 @@
       ]
     },
     {
-      "label": "FWUpdate-State",
+      "label": "fwu_state",
       "type": "dynamic",
       "value_type": "integer",
       "metadata": [
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "label": "FWUpdate-UpdateResult",
+      "label": "fwu_update_result",
       "type": "dynamic",
       "value_type": "integer",
       "metadata": [
@@ -59,7 +59,7 @@
       ]
     },
     {
-      "label": "FWUpdate-Update",
+      "label": "fwu_update",
       "type": "actuator",
       "value_type": "string",
       "metadata": [
@@ -84,7 +84,7 @@
       ]
     },
     {
-      "label": "Firmware-version",
+      "label": "firmware_version",
       "type": "dynamic",
       "value_type": "string",
       "metadata": [
@@ -98,6 +98,19 @@
           "type": "lwm2m",
           "label": "path",
           "static_value": "/3/0/3",
+          "value_type": "string"
+        }
+      ]
+    },
+    {
+      "label": "fwu_protocol",
+      "type": "dynamic",
+      "value_type": "integer",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "label": "path",
+          "static_value": "/5/0/8",
           "value_type": "string"
         }
       ]

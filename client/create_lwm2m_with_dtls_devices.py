@@ -14,7 +14,7 @@ iotc = IotClient()
 template_lwm2m = iotc.create_template(load_template("template_lwm2m.json"))
 template_dtls = iotc.create_template(load_template("template_dtls.json"))
 template_temp_sensor = iotc.create_template(load_template("models/3303.json"))
-template_fw_update = iotc.create_template(load_template("firmware_update.json"))
+template_fw_update = iotc.create_template(load_template("template_firmware_update.json"))
 
 device_endpoint = "client-endpoint"
 device_payload_base = {

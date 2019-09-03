@@ -11,10 +11,11 @@ Using this agent you can:
 - monitor LwM2M resources
 - interact with LwM2M resources (write and execute)
 - use DTLS communication (only with PSK)
-- firmware update
+- firmware update (Only the protocols COAP, COAPS and HTTP are supported. 
+Actually HTTPS is not supported. The delivery method PUSH is not supported)
+- deal with multidimensional resources (just reading, writing is not supported yet)
 Please note that:
 - LwM2M attributes are not supported
-- multidimensional resources are not supported
 
 # How to create a dojot's device in compliance to this agent
 
@@ -54,6 +55,10 @@ The following metadata should be included if your attribute has execution proper
   ]
 ```
 
+Please, note that the support to multidimentional resources is initial, for now
+is only possible to read this kind of resource. All multidimentional resources are
+exported as string with the following format: `LwM2mMultipleResource [values=%s, type=%s]`.
+
 # How to encapsulates the service into a Docker container
 
 In order to use this service in the dojot environment we need to encapsulate it
@@ -65,12 +70,23 @@ docker build -t dojot/iotagent-lwm2m .
 Obs: just note that `dojot/iotagent-lwm2m` is the image name, you can replace it
 with some other name that you desire.
 
+# Firmware update
+
+In order to the firmware process execute make sure your device implements the
+LwM2M objects 3 (device) and 5 (firmware update).
+You can find a firmware update template sample [here](client/firmware_update.json).
+
+Attention: the delivery method PUSH is not supported yet.
+
 # Environment variables
 
 This service relies on some environment variables to configure some aspects.
 These variables are the following ones:
   - DOJOT_MANAGEMENT_USER:
-  - KAFKA_GROUP_ID:     
-  - FILE_SERVER_ADDRESS:
+  - KAFKA_GROUP_ID: kafka's consumer group id
+  - FILE_SERVER_ADDRESS: address that the file server will be listening (127.0.0.1)
+  - FILE_SERVER_DATA_PATH: path where the firmware images will be stored (./data)
+  - FILE_SERVER_HTTP_PORT: port that the file server will be listening for HTTP protocol (5896)
+  - FILE_SERVER_HTTPS_PORT: port that the file server will be listening for HTTPS protocol (5897) *NOT SUPPORTED*
 
-   
+Please, note that there are also some configurations that are read from the file `fileServerCoAP.properties`.

@@ -1,10 +1,10 @@
 package org.cpqd.iotagent;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 import org.apache.log4j.Logger;
 import org.eclipse.californium.core.network.config.NetworkConfig;
-import com.cpqd.app.config.Config;
 
 public class LwM2MIoTAgent {
 
@@ -13,27 +13,25 @@ public class LwM2MIoTAgent {
         logger.info("Starting lwm2m IoTAgent...");
 
         FileServerPskStore securityStore = new FileServerPskStore();
+        org.cpqd.iotagent.Config config = org.cpqd.iotagent.Config.getInstance();
+        
 
         File coapConfigFile = new File(new String("fileServerCoAP.properties"));
 
         NetworkConfig netConfig = NetworkConfig.createStandardWithFile(coapConfigFile);
         int coapPort = netConfig.getInt(NetworkConfig.Keys.COAP_PORT);
-        int secureCoapPort = netConfig.getInt(NetworkConfig.Keys.COAP_SECURE_PORT);
+        int coapsPort = netConfig.getInt(NetworkConfig.Keys.COAP_SECURE_PORT);
 
-        String fileServerAddress;
+        String fileServerAddress = config.getFileServerAddress();
+        int httpPort = config.getFileServerHttpPort();
+        int httpsPort = config.getFileServerHttpsPort();
+        String fileServerDataPath = Paths.get(config.getFileServerDataPath()).toAbsolutePath().toString();
 
-        if (System.getenv("FILE_SERVER_ADDRESS") == null) {
-            logger.fatal("Missing file server address configuration." +
-                    "Please check if the 'FILE_SERVER_ADDRESS' if setted");
-            System.exit(1);
-        }
-        fileServerAddress = System.getenv("FILE_SERVER_ADDRESS");
-
-        Config dojotConfig = Config.getInstance();
-        String dataDir = "data";
+        com.cpqd.app.config.Config dojotConfig = com.cpqd.app.config.Config.getInstance();
+        
         ImageDownloader imageDownloader = new ImageDownloader(
-                "http://" + dojotConfig.getImageManagerAddress(), dataDir,
-                fileServerAddress, coapPort, secureCoapPort);
+                "http://" + dojotConfig.getImageManagerAddress(), fileServerDataPath,
+                fileServerAddress, coapPort, coapsPort, httpPort, httpsPort);
 
 
         Long consumerPollTime = dojotConfig.getKafkaDefaultConsumerPollTime();
@@ -46,10 +44,13 @@ public class LwM2MIoTAgent {
             System.exit(1);
         }
 
-        SimpleFileServer fileServer = new SimpleFileServer(coapConfigFile, securityStore);
+        SimpleFileServerHttp httpFileServer = new SimpleFileServerHttp(httpPort, fileServerDataPath);
+        httpFileServer.start();
 
-        fileServer.start();
-        fileServer.addNewResource(dataDir, new File(dataDir));
+        SimpleFileServerCoap coapFileServer = new SimpleFileServerCoap(coapConfigFile, securityStore);
+        coapFileServer.start();
+        coapFileServer.addNewResource("data", new File(fileServerDataPath));
+
         (new Thread(agent)).start();
 
         while (true) {
