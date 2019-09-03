@@ -50,6 +50,17 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.1</version>
+                <configuration>
+                    <encoding>utf8</encoding>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -120,12 +131,22 @@
         <dependency>
             <groupId>com.github.dojot</groupId>
             <artifactId>iotagent-java</artifactId>
-            <version>master-SNAPSHOT</version>
+            <version>9235705b17ae4a9ca75c1109102cf176c9ce328f</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.dojot</groupId>
+            <artifactId>dojot-module-java</artifactId>
+            <version>6e9cebd903a00e65ac7a9fac00333d769e2fb7a9</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.californium</groupId>
             <artifactId>californium-core</artifactId>
             <version>2.0.0-M6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>9.4.20.v20190813</version>
         </dependency>
     </dependencies>
 

@@ -1,19 +1,21 @@
 package org.cpqd.iotagent;
 
-import java.util.List;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Vector;
 
 import org.apache.log4j.Logger;
-import org.cpqd.iotagent.Device;
-import org.cpqd.iotagent.DeviceAttribute;
-import org.cpqd.iotagent.ImageDownloader;
-import org.cpqd.iotagent.LwM2mHandler;
 import org.cpqd.iotagent.DeviceMapper.DeviceControlStructure;
+import org.cpqd.iotagent.lwm2m.objects.DevicePath;
+import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
+import org.cpqd.iotagent.lwm2m.objects.SecurityPath;
+import org.eclipse.leshan.core.node.LwM2mMultipleResource;
 import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.node.LwM2mSingleResource;
+import org.eclipse.leshan.core.node.LwM2mResource;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
 import org.eclipse.leshan.core.observation.Observation;
@@ -32,8 +34,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import br.com.dojot.config.Config;
-import br.com.dojot.kafka.Manager;
+import br.com.dojot.IoTAgent.IoTAgent;
 import br.com.dojot.utils.Services;
 
 
@@ -43,24 +44,28 @@ public class LwM2MAgent implements Runnable {
     private DeviceMapper deviceMapper;
     private LwM2mHandler requestHandler;
     private LeshanServer server;
-    private Manager eventHandler;
+    private IoTAgent eventHandler;
     private InMemorySecurityStore securityStore;
+    private FileServerPskStore fsPskStore;
 
 
-    public LwM2MAgent() {
-        this.eventHandler = new Manager();
+    public LwM2MAgent(long consumerPollTime, ImageDownloader imageDownloader, FileServerPskStore pskStore) {
+        try {
+            this.eventHandler = new IoTAgent(consumerPollTime);
+        } catch (Exception ex) {
+            logger.error("IoT-Agent initialization failed. Bailing out! (" + ex + ")");
+            System.exit(1);
+        }
         this.deviceMapper = new DeviceMapper();
-
         this.securityStore = new InMemorySecurityStore();
-
-        Config dojotConfig = Config.getInstance();
-//        imageDownloader = new ImageDownloader("http://" + dojotConfig.getImageManagerAddress());
+        this.imageDownloader = imageDownloader;
+        this.fsPskStore = pskStore;
 
         // register the callbacks to treat the events
-        this.eventHandler.addCallback("create", this::on_create);
-        this.eventHandler.addCallback("update", this::on_create);
-        this.eventHandler.addCallback("remove", this::on_remove);
-        this.eventHandler.addCallback("configure", this::on_actuate);
+        this.eventHandler.on("iotagent.device", "device.create", this::on_create);
+        this.eventHandler.on("iotagent.device", "device.update", this::on_create);
+        this.eventHandler.on("iotagent.device", "device.remove", this::on_remove);
+        this.eventHandler.on("iotagent.device", "device.configure", this::on_actuate);
     }
 
     /**
@@ -68,115 +73,156 @@ public class LwM2MAgent implements Runnable {
      * build a updated vision about the devices
      */
     public boolean bootstrap() {
-        logger.debug("Bootstrap iotagent leshan: started");
-        Services iotAgent = Services.getInstance();
-
-        List<String> tenants = iotAgent.listTenants();
-        if (tenants == null) {
-            logger.error("Fail to retrieve tenants");
-            return false;
-        }
-        for (String tenant: tenants) {
-            logger.debug("Requesting devices from tenant: " + tenant);
-            List<String> devicesId = iotAgent.listDevices(tenant);
-            if (devicesId == null) {
-                logger.error("Fail to retrieve devices");
-                return false;
-            }
-            for (String deviceId: devicesId) {
-                logger.debug("Requesting device with device id: " + deviceId);
-                JSONObject deviceJson = iotAgent.getDevice(deviceId, tenant);
-                if (deviceJson == null) {
-                    logger.error("Fail to retrieve device");
-                    return false;
-                }
-                Device device;
-                try {
-                    device = new Device(deviceJson);
-                } catch (Exception e) {
-                    //just skip this device, it probably is not a LWM2M device
-                    continue;
-                }
-                this.deviceMapper.addNorthboundAssociation(device.getClientEndpoint(), deviceId, tenant);
-            }
-        }
-
-        logger.debug("Bootstrap iotagent leshan: finished");
+        this.eventHandler.generateDeviceCreateEventForActiveDevices();
         return true;
     }
 
-    private JSONObject transformLwm2mResourceValueIntoJson(DeviceAttribute attr, LwM2mSingleResource resource) throws Exception {
+    public void setKeyPskStore(String keyId, String psk) {
+        this.fsPskStore.setKey(keyId, psk.getBytes());
+    }
+
+    /**
+     * This method is part of Firmware Update. The first thing to do in a firmware update in LwM2m protocol
+     * is send the Package URI to the device. The next step, is wait until the device send that his state
+     * has changed to downloaded (state 2), and, then, actuate on the attribute "FWUpdate-Update", that
+     * will trigger the Firmware Update on the device.
+     *
+     * @param registration, newFwVersion, tenant
+     * @return
+     */
+    private void sendsUriToDevice(Registration registration, String imageLabel,
+                                     String newFwVersion, String tenant, boolean isDeviceSecure) {
+
+        logger.debug("Will try to send URI to device");
+
+        //Verification if the fw version is really changing.
+        LwM2mSingleResource currentFwVersionResource = requestHandler.ReadResource(registration, DevicePath.FIRMWARE_VERSION);
+        if (currentFwVersionResource == null) {
+            logger.error("Failed to read current firmware version");
+            return;
+        }
+        String currentFwVersion = (String) currentFwVersionResource.getValue();
+        logger.debug("Current FW version: " + currentFwVersion);
+        logger.debug("Desirable FW version: " + newFwVersion);
+
+        //empty string is written to the Package URI
+        //restart to idle
+        if (newFwVersion == null || newFwVersion.trim().isEmpty()) {
+            logger.debug("Will write Empty in resource package URI and discard transfer");
+            requestHandler.WriteResource(registration, FirmwareUpdatePath.PACKAGE_URI, "");
+            return;
+        }
+        //Gets URL to give it to device if the version is actual changing
+        if (!currentFwVersion.equals(newFwVersion)) {
+            logger.debug("Versions have actual changed");
+
+            // Verify the supported protocol
+            LwM2mMultipleResource supportedProtocolResource = requestHandler.ReadMultipleResource(registration, FirmwareUpdatePath.FIRMWARE_UPDATE_PROTOCOL_SUPPORT);
+            if (supportedProtocolResource == null) {
+                logger.error("Failed to read the supported protocol to execute the firmware update");
+                return;
+            }
+            Map<Integer, ?> protocolMap = supportedProtocolResource.getValues();
+            Vector<Integer> supportedProtocols = new Vector<Integer>();
+            for (Map.Entry<Integer, ?> entry : protocolMap.entrySet()) {
+                supportedProtocols.add((Integer)((Long)entry.getValue()).intValue());
+            }
+
+            int supportedProtocol = 0;
+            try {                
+               supportedProtocol = selectFirmwareUpdateProtocol(supportedProtocols, isDeviceSecure);
+            } catch (Exception e) {
+                logger.warn(e.toString());
+                return;
+            }
+
+            String fileUri = null;
+            try {
+                fileUri = imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion, supportedProtocol);
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+                return;
+            }
+            logger.debug("Got the file URI: " + fileUri);
+            logger.debug("Will write URI in resource package URI");
+            requestHandler.WriteResource(registration, FirmwareUpdatePath.PACKAGE_URI, fileUri);
+        } else {
+            logger.debug("Device already up-to-date");
+        }
+        return;
+    }
+
+    private int selectFirmwareUpdateProtocol(Vector<Integer> supportedProtocols, boolean isDeviceSecure) {
+        boolean isCoapSupported = false;
+        boolean isCoapsSupported = false;
+        boolean isHttpSupported = false;
+        boolean isHttpsSupported = false;
+        
+        for (int i = 0; i < supportedProtocols.size(); ++i) {
+            switch(supportedProtocols.get(i)) {
+                case FirmwareUpdatePath.PROTOCOL_COAP:
+                    isCoapSupported = true;
+                    break;
+                case FirmwareUpdatePath.PROTOCOL_COAPS:
+                    isCoapsSupported = true;
+                    break;
+                case FirmwareUpdatePath.PROTOCOL_HTTP:
+                    isHttpSupported = true;
+                    break;
+                case FirmwareUpdatePath.PROTOCOL_HTTPS:
+                    isHttpsSupported = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if ((isDeviceSecure) && (isHttpsSupported)) {
+            return FirmwareUpdatePath.PROTOCOL_HTTPS;
+        }
+        if ((isDeviceSecure) && (isCoapsSupported)) {
+            return FirmwareUpdatePath.PROTOCOL_COAPS;
+        }
+        if (isHttpSupported) {
+            return FirmwareUpdatePath.PROTOCOL_HTTP;
+        }
+        if (isCoapSupported) {
+            return FirmwareUpdatePath.PROTOCOL_COAP;
+        }
+
+        throw new RuntimeException("Cannot define a protocol");
+    }
+
+    private JSONObject transformLwm2mResourceValueIntoJson(DeviceAttribute attr, LwM2mResource resource) throws Exception {
         JSONObject attrJson = new JSONObject();
         String valueType = attr.getValueType();
 
+        if (resource.isMultiInstances()) {
+            String resourceData = String.format("LwM2mMultipleResource [values=%s, type=%s]",
+                resource.getValues().toString(), resource.getType().toString());
+            attrJson.put(attr.getLabel(), resourceData);
+            return attrJson;
+        }
+
         switch (resource.getType()) {
             case BOOLEAN:
-                attrJson.put(attr.getLabel(), (Boolean)resource.getValue());
+                attrJson.put(attr.getLabel(), (Boolean) resource.getValue());
                 break;
             case FLOAT:
-                attrJson.put(attr.getLabel(), (Double)resource.getValue());
+                attrJson.put(attr.getLabel(), (Double) resource.getValue());
                 break;
             case INTEGER:
-                attrJson.put(attr.getLabel(), (Long)resource.getValue());
+                attrJson.put(attr.getLabel(), (Long) resource.getValue());
                 break;
             case STRING:
-                attrJson.put(attr.getLabel(), (String)resource.getValue());
+                attrJson.put(attr.getLabel(), (String) resource.getValue());
                 break;
             case TIME:
-                attrJson.put(attr.getLabel(), ((Date)resource.getValue()).toString());
+                attrJson.put(attr.getLabel(), ((Date) resource.getValue()).toString());
                 break;
             case OPAQUE:
-                byte [] data = (byte[])resource.getValue();
-                if (valueType.equals("interger")) {
-                    switch(data.length) {
-                        case 1:
-                            Byte b = data[0];
-                            attrJson.put(attr.getLabel(), b.intValue());
-                            break;
-                        case 2:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getShort());
-                            break;
-                        case 4:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getInt());
-                            break;
-                        case 8:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getLong());
-                            break;
-                        default:
-                            logger.error("Attribute " + attr.getLwm2mPath() +
-                                " mapped as integer but received " +
-                                data.length + " bytes.");
-                            throw new Exception();
-                    }
-                } else if (valueType.equals("boolean")) {
-                    if (data.length != 1) {
-                        logger.error("Attribute " + attr.getLwm2mPath() +
-                            " mapped as boolean but received " +
-                            data.length + " bytes.");
-                        throw new Exception();
-                    }
-                    if (data[0] == 1) {
-                        attrJson.put(attr.getLabel(), true);
-                    } else {
-                        attrJson.put(attr.getLabel(), false);
-                    }
-                } else if (valueType.equals("float")) {
-                    switch(data.length) {
-                        case 4:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getFloat());
-                            break;
-                        case 8:
-                            attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getDouble());
-                            break;
-                        default:
-                            logger.error("Attribute " + attr.getLwm2mPath() +
-                                " mapped as float but received " +
-                                data.length + " bytes.");
-                            throw new Exception();
-                    }
-                } else { // we are assuming the others type are string compatible (is it safe?)
-                    attrJson.put(attr.getLabel(), new String(data));
-                }
+                byte[] data = (byte[]) resource.getValue();
+                transformLwm2mResourceValueIntoJsonOpaqueCases(attr, attrJson, valueType, data);
                 break;
             default:
                 logger.error("Unsupported resource type: " + resource.getType().toString());
@@ -186,80 +232,114 @@ public class LwM2MAgent implements Runnable {
         return attrJson;
     }
 
+    private void transformLwm2mResourceValueIntoJsonOpaqueCases(DeviceAttribute attr, JSONObject attrJson, String valueType, byte[] data) throws Exception {
+        if (valueType.equals("interger")) {
+            switch (data.length) {
+                case 1:
+                    Byte b = data[0];
+                    attrJson.put(attr.getLabel(), b.intValue());
+                    break;
+                case 2:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getShort());
+                    break;
+                case 4:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getInt());
+                    break;
+                case 8:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getLong());
+                    break;
+                default:
+                    logger.error("Attribute " + attr.getLwm2mPath() +
+                            " mapped as integer but received " +
+                            data.length + " bytes.");
+                    throw new Exception();
+            }
+        } else if (valueType.equals("boolean")) {
+            if (data.length != 1) {
+                logger.error("Attribute " + attr.getLwm2mPath() +
+                        " mapped as boolean but received " +
+                        data.length + " bytes.");
+                throw new Exception();
+            }
+            if (data[0] == 1) {
+                attrJson.put(attr.getLabel(), true);
+            } else {
+                attrJson.put(attr.getLabel(), false);
+            }
+        } else if (valueType.equals("float")) {
+            switch (data.length) {
+                case 4:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getFloat());
+                    break;
+                case 8:
+                    attrJson.put(attr.getLabel(), ByteBuffer.wrap(data).getDouble());
+                    break;
+                default:
+                    logger.error("Attribute " + attr.getLwm2mPath() +
+                            " mapped as float but received " +
+                            data.length + " bytes.");
+                    throw new Exception();
+            }
+        } else { // we are assuming the others type are string compatible (is it safe?)
+            attrJson.put(attr.getLabel(), new String(data));
+        }
+    }
+
     /**
-     * @brief This method is a callback and it is called every time a new device is created. It creates a device
-     * representation, register the security key, if any, and can trigger the observation procedure if applicable
      * @param message
      * @return
+     * @brief This method is a callback and it is called every time a new device is created. It creates a device
+     * representation, register the security key, if any, and can trigger the observation procedure if applicable
      */
-    private Integer on_create(JSONObject message) {
-        logger.debug("on_create: " + message.toString());
+    private Void on_create(String tenant, String message) {
+        JSONObject messageObj = new JSONObject(message);
+        logger.debug("on_create: " + messageObj.toString());
 
         // try to build a device representation
-        String tenant = message.getJSONObject("meta").getString("service");
         Device device;
         try {
-            device = new Device(message.getJSONObject("data"));
+            device = new Device(messageObj.getJSONObject("data"));
         } catch (JSONException e) {
             logger.error("Invalid json");
-            return 0;
+            return null;
         } catch (Exception e) {
             // this it not a lwm2m device, just skip it
-            return 0;
+            return null;
         }
 
         String deviceId = device.getDeviceId();
         String clientEndpoint = device.getClientEndpoint();
 
-        // let's check if there are any PSK configured into device, if it exists, so removes any others key previously
-        // registered with this client endpoint and adds a new entry with the received data
+        Services iotAgent = Services.getInstance();
+        iotAgent.addDeviceToCache(tenant, deviceId, messageObj.getJSONObject("data"));
 
-        // '/0/0/5' is the standard path to pre-shared key value
-        DeviceAttribute pskAttr = device.getAttributeByPath("/0/0/5");
-        if (pskAttr != null) {
-            if (!pskAttr.getValueType().equals("psk")) {
-                //todo
-                logger.error("device " + deviceId + ": invalid psk value type, it must be 'psk'");
-                return 0;
-            }
+        if (device.isSecure()) {
+            // '/0/0/5' is the standard path to pre-shared key value
+            DeviceAttribute pskAttr = device.getAttributeByPath(SecurityPath.PRE_SHARED_SECRET_KEY);
             String psk = (String) pskAttr.getStaticValue();
-            if (psk == null) {
-                logger.error("device " + deviceId + ": missing psk value. Have you configured it?");
-                return 0;
-            }
             // '/0/0/3' is the standard path to the pre-shared key identity
-            DeviceAttribute pskIdentityAttr = device.getAttributeByPath("/0/0/3");
-            if (pskIdentityAttr == null) {
-                logger.error("device " + deviceId + ": psk is present, but psk identity not");
-                return 0;
-            }
-            if (!pskIdentityAttr.getValueType().equals("string")) {
-                logger.error("device " + deviceId + ": invalid psk identity value type, it must be 'string'");
-                return 0;
-            }
+            DeviceAttribute pskIdentityAttr = device.getAttributeByPath(SecurityPath.PRE_SHARED_KEY_IDENTITY);
             String pskIdentity = (String) pskIdentityAttr.getStaticValue();
-            if (pskIdentity == null) {
-                logger.error("device " + deviceId + ": missing psk identity configuration. Have you configured it?");
-                return 0;
-            }
             SecurityInfo securityInfo = SecurityInfo.newPreSharedKeyInfo(clientEndpoint,
-                                                                         pskIdentity,
-                                                                         Hex.decodeHex(psk.toCharArray()));
+                    pskIdentity,
+                    Hex.decodeHex(psk.toCharArray()));
             try {
                 this.securityStore.remove(clientEndpoint);
                 this.securityStore.add(securityInfo);
+                logger.info("Inserting pskId ioto psk store");
+                this.fsPskStore.setKey(pskIdentity, psk.getBytes());
                 logger.debug("Adding a psk to device: " + deviceId);
             } catch (NonUniqueSecurityInfoException e) {
                 e.printStackTrace();
-                return 0;
+                return null;
             }
         } else {
             logger.debug("device: " + deviceId + " is not using DTLS");
         }
 
         DeviceControlStructure controlStructure = this.deviceMapper.addNorthboundAssociation(clientEndpoint,
-                                                                                             deviceId,
-                                                                                             tenant);
+                deviceId,
+                tenant);
         if (controlStructure.isSouthboundAssociate()) {
             logger.debug("Observing some attributes");
             this.requestHandler.CancelAllObservations(controlStructure.registration);
@@ -268,11 +348,11 @@ public class LwM2MAgent implements Runnable {
             logger.debug("skipping observing, southbound is not registered yet");
         }
 
-        return 0;
+        return null;
     }
 
     private void observeResources(String deviceId, String tenant,
-        LinkedList<DeviceAttribute> readableAttrs, Registration registration) {
+                                  LinkedList<DeviceAttribute> readableAttrs, Registration registration) {
 
         JSONObject attrJson;
         JSONObject allAttrsJson = new JSONObject();
@@ -280,7 +360,7 @@ public class LwM2MAgent implements Runnable {
             String path = attr.getLwm2mPath();
             logger.debug("Observing: " + attr.getLabel());
             try {
-                LwM2mSingleResource resource = requestHandler.ObserveResource(registration, path);
+                LwM2mResource resource = requestHandler.ObserveResource(registration, path);
                 if (resource == null) {
                     throw new Exception();
                 }
@@ -293,18 +373,36 @@ public class LwM2MAgent implements Runnable {
         eventHandler.updateAttrs(deviceId, tenant, allAttrsJson, null);
     }
 
-    private Integer on_remove(JSONObject message) {
-        logger.debug("on_remove: " + message.toString());
+    private Void on_remove(String tenant, String message) {
+        JSONObject messageObj = new JSONObject(message);
+        logger.debug("on_remove: " + messageObj.toString());
+
+        try {
+            String deviceId = null;
+            deviceId = messageObj.getJSONObject("data").getString("id");
+
+            Services iotAgent = Services.getInstance();
+            iotAgent.removeDeviceFromCache(tenant, deviceId);
+        } catch (Exception e) {
+            logger.error("Failed to clear cache, agent can have misbehavior");
+        }
 
         Device device;
         try {
-            device = new Device(message.getJSONObject("data"));
+            device = new Device(messageObj.getJSONObject("data"));
         } catch (JSONException e) {
             logger.error("Invalid json");
-            return 0;
+            return null;
         } catch (Exception e) {
             // this it not a lwm2m device, just skip it
-            return 0;
+            return null;
+        }
+
+        if (device.isSecure()) {
+            DeviceAttribute pskIdentityAttr = device.getAttributeByPath(SecurityPath.PRE_SHARED_KEY_IDENTITY);
+            String pskIdentity = (String) pskIdentityAttr.getStaticValue();
+            logger.info("removing pskId from psk store");
+            this.fsPskStore.removeKey(pskIdentity);
         }
 
         String clientEndpoint = device.getClientEndpoint();
@@ -313,14 +411,14 @@ public class LwM2MAgent implements Runnable {
             this.requestHandler.CancelAllObservations(controlStructure.registration);
         }
         this.deviceMapper.removeNorthboundAssociation(clientEndpoint);
-        return 0;
+        return null;
     }
 
-    private Integer on_actuate(JSONObject message) {
-        logger.debug("on_actuate: " + message.toString());
+    private Void on_actuate(String tenant, String message) {
+        JSONObject messageObj = new JSONObject(message);
+        logger.debug("on_actuate: " + messageObj.toString());
 
-        String tenant = message.getJSONObject("meta").getString("service");
-        String deviceId = message.getJSONObject("data").getString("id");
+        String deviceId = messageObj.getJSONObject("data").getString("id");
 
         DeviceAttribute devAttr;
 
@@ -330,16 +428,16 @@ public class LwM2MAgent implements Runnable {
         try {
             device = new Device(deviceJson);
         } catch (Exception e) {
-            return 0;
+            return null;
         }
 
         DeviceControlStructure controlStruture = this.deviceMapper.getDeviceControlStructure(device.getClientEndpoint());
         if ((controlStruture == null) || (!controlStruture.isSouthboundAssociate())) {
             logger.error("Device: " + device.getDeviceId() + " is not registered");
-            return 0;
+            return null;
         }
 
-        JSONObject attrs = message.getJSONObject("data").getJSONObject("attrs");
+        JSONObject attrs = messageObj.getJSONObject("data").getJSONObject("attrs");
         JSONArray targetAttrs = attrs.names();
 
         for (int i = 0; i < targetAttrs.length(); ++i) {
@@ -348,6 +446,29 @@ public class LwM2MAgent implements Runnable {
             if (devAttr != null) {
                 logger.debug("actuating on attribute: " + devAttr.getLabel());
                 String path = devAttr.getLwm2mPath();
+
+                // check if it is a firmware update request
+                if (path.equals(FirmwareUpdatePath.PACKAGE_URI)) {
+
+                    // Verify if the device supports this delivery method
+                    LwM2mSingleResource deliveryMethodResource = requestHandler.ReadResource(controlStruture.registration, FirmwareUpdatePath.FIRMWARE_UPDATE_DELIVERY_METHOD);
+                    if (deliveryMethodResource == null) {
+                        logger.error("Failed to read the supported delivert method to transfer firmware image");
+                        continue;
+                    }
+                    int deliveryMethod = (int)(long) deliveryMethodResource.getValue();
+                    if (deliveryMethod == FirmwareUpdatePath.DELIVERY_METHOD_PUSH) {
+                        logger.error("This device only supports delivery method push. The URI will not be send to the device.");
+                        continue;
+                    }
+
+                    String imageVersion = attrs.getString(targetAttr);
+                    String imageLabel = devAttr.getTemplateId();
+                    logger.info("Image id that came on actuation: " + imageVersion);
+                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, device.isSecure());
+                    continue;
+                }
+
                 if (devAttr.isExecutable()) {
                     logger.debug("excuting");
                     requestHandler.ExecuteResource(controlStruture.registration, path, attrs.getString(targetAttr));
@@ -360,9 +481,8 @@ public class LwM2MAgent implements Runnable {
             }
         }
 
-        return 0;
+        return null;
     }
-
 
     private final RegistrationListener registrationListener = new RegistrationListener() {
 
@@ -373,23 +493,27 @@ public class LwM2MAgent implements Runnable {
             logger.debug("registered: " + registration.toString());
 
             DeviceControlStructure controlStructure = deviceMapper.addSouthboundAssociation(registration.getEndpoint(),
-                                                                                            registration);
+                    registration);
             if (controlStructure.isNorthboundAssociate()) {
                 logger.debug("Observing some attributes");
 
                 Services iotAgent = Services.getInstance();
-                JSONObject cachedDev = iotAgent.getDevice(controlStructure.deviceId, controlStructure.tenant);
+                JSONObject deviceJson = iotAgent.getDevice(controlStructure.deviceId, controlStructure.tenant);
+                if (deviceJson == null) {
+                    logger.warn("Device " + controlStructure.deviceId + " has not found");
+                    return;
+                }
                 Device device;
                 try {
-                    device = new Device(cachedDev);
+                    device = new Device(deviceJson);
                 } catch (Exception e) {
-                    logger.error("Unexpected situation");
+                    logger.error("Unexpected situation: " + e.toString());
                     return;
                 }
 
                 requestHandler.CancelAllObservations(controlStructure.registration);
                 observeResources(controlStructure.deviceId, controlStructure.tenant,
-                    device.getReadableAttributes(), controlStructure.registration);
+                        device.getReadableAttributes(), controlStructure.registration);
             } else {
                 logger.debug("skpping observing, northbound is not registered yet");
             }
@@ -429,26 +553,26 @@ public class LwM2MAgent implements Runnable {
                 logger.warn("Response is null. Skipping it");
                 return;
             }
-            if (!(lwm2mNode instanceof LwM2mSingleResource)) {
+            if (!(lwm2mNode instanceof LwM2mResource)) {
                 logger.warn("Unsuported content object.");
                 return;
             }
-            LwM2mSingleResource resource = (LwM2mSingleResource)lwm2mNode;
+            LwM2mResource resource = (LwM2mResource) lwm2mNode;
 
             //retrieve device's attribute information
-            DeviceControlStructure controlStruture = deviceMapper.getDeviceControlStructure(registration.getEndpoint());
-            if (controlStruture == null) {
+            DeviceControlStructure controlStructure = deviceMapper.getDeviceControlStructure(registration.getEndpoint());
+            if (controlStructure == null) {
                 logger.warn("Unknown endpoint: " + registration.getEndpoint());
                 return;
             }
-            if (!controlStruture.isNorthboundAssociate()) {
+            if (!controlStructure.isNorthboundAssociate()) {
                 logger.warn("There is not device associate yet with the endpoint: " + registration.getEndpoint());
                 return;
             }
             Services iotAgent = Services.getInstance();
-            JSONObject deviceJson = iotAgent.getDevice(controlStruture.deviceId, controlStruture.tenant);
+            JSONObject deviceJson = iotAgent.getDevice(controlStructure.deviceId, controlStructure.tenant);
             if (deviceJson == null) {
-                logger.warn("Device " + controlStruture.deviceId + " has not found");
+                logger.warn("Device " + controlStructure.deviceId + " has not found");
                 return;
             }
 
@@ -469,11 +593,11 @@ public class LwM2MAgent implements Runnable {
             try {
                 attrJson = transformLwm2mResourceValueIntoJson(attr, resource);
             } catch (Exception e) {
-                return ;
+                return;
             }
 
-            eventHandler.updateAttrs(controlStruture.deviceId,
-                controlStruture.tenant, attrJson, null);
+            eventHandler.updateAttrs(controlStructure.deviceId,
+                controlStructure.tenant, attrJson, null);
         }
 
         @Override

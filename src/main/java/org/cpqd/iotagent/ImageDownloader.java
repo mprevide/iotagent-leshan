@@ -4,6 +4,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import org.apache.log4j.Logger;
+import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -12,85 +13,149 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.NoSuchElementException;
+import com.cpqd.app.auth.Auth;
 
 /**
- * This class abstracts everything related to the image-manager, it should have no knowledge of anything LWM2M related
+ * This class abstracts everything related to the image-manager,
+ * it should have no knowledge of anything LWM2M related
  */
 
 public class ImageDownloader {
     private Logger mLogger = Logger.getLogger(ImageDownloader.class);
+    
+    private String mImageManagerUri;
+    private String mFileServerAddress;
+    private String mCoapPort;
+    private String mCoapsPort;
+    private String mHttpPort;
+    private String mHttpsPort;
+    private String mDataDir;
+    private static final String IMAGE_EXTENSION = ".hex";
 
-    private String imageUrl;
+    public ImageDownloader(String imageManagerUri, String dataDir, 
+        String fileServerAddress, int coapPort, int coapsPort,
+        int httpPort, int httpsPort) {
 
-    public ImageDownloader(String imageManagerUrl) {
-        this.imageUrl = imageManagerUrl + "/image";
+        this.mImageManagerUri = imageManagerUri + "/image";
+        this.mFileServerAddress = fileServerAddress;
+        this.mCoapPort = Integer.toString(coapPort);
+        this.mCoapsPort = Integer.toString(coapsPort);
+        this.mHttpPort = Integer.toString(httpPort);
+        this.mHttpsPort = Integer.toString(httpsPort);
+        this.mDataDir = dataDir;
+    }
+
+    public String downloadImageAndGenerateUri(String tenant, String imageLabel,
+        String version, int protocol) {
+
+        String imageFilename = null;
         try {
-            Path path = FileSystems.getDefault().getPath("./data/");
-            if (!Files.exists(path)) {
-                Files.createDirectory(path);
-            }
+            imageFilename = this.fetchImage(tenant, imageLabel, version);
         } catch (Exception e) {
+            this.mLogger.error(e.getMessage());
+            throw new RuntimeException("Failed to download and generate URI");
         }
+
+        String uri;
+        switch(protocol) {
+            case FirmwareUpdatePath.PROTOCOL_COAP:
+                uri = "coap://" + this.mFileServerAddress + ":" + this.mCoapPort +
+                    "/" + imageFilename;
+            break;
+            case FirmwareUpdatePath.PROTOCOL_COAPS:
+                uri = "coaps://" + this.mFileServerAddress + ":" + this.mCoapsPort +
+                    "/" + imageFilename;
+            break;
+            case FirmwareUpdatePath.PROTOCOL_HTTP:
+                uri = "http://" + this.mFileServerAddress + ":" + this.mHttpPort +
+                    "/" + imageFilename;
+            break;
+            case FirmwareUpdatePath.PROTOCOL_HTTPS:
+                uri = "https://" + this.mFileServerAddress + ":" + this.mHttpsPort +
+                    "/" + imageFilename;
+                this.mLogger.error("HTTPS is not supported yet");
+                throw new RuntimeException("HTTPS is not supported yet");
+            default:
+                this.mLogger.error("Unknown protocol: " + protocol);
+                throw new RuntimeException("Failed to generate URI");
+        }
+        return uri;
     }
 
-    public String ImageUrl(String service, String imageLabel, String version) {
-        // TODO(jsiloto): Sanity check and return empty
-        String imageID = FetchImage(service, imageLabel, version);
-        String fileserverUrl = "coap://[2001:db8::2]:5693/data/";
-        String fileUrl = fileserverUrl + imageID + ".hex";
-        return fileUrl;
-    }
+    private String fetchImage(String tenant, String imageLabel, String version) throws RuntimeException {
 
-    public String FetchImage(String service, String imageLabel, String version) {
-        String token = TenancyManager.GetJwtToken(service);
-        String imageID = GetImageId(imageLabel, version, token);
-        DownloadImage(imageID, token);
-        return imageID;
-    }
-
-    private String GetImageId(String imageLabel, String version, String token) {
+        String imageId = null;
+        this.mLogger.debug("Fetching image with label: " + imageLabel + " at version " + version);
+        String filename = null;
         try {
+            String token = Auth.getInstance().getToken(tenant);
+            imageId = this.getImageId(imageLabel, version, token);
+            filename = tenant + "-" + imageId + IMAGE_EXTENSION;
+            this.downloadImage(imageId, filename, token);
+        } catch (Exception e) {
+            this.mLogger.error(e.getMessage());
+            throw new RuntimeException("Failed to fetch image");
+        }
 
-            HttpResponse<JsonNode> response = Unirest.get(imageUrl)
-                    .header("Authorization", "Bearer " + token).asJson();
+        return filename;
+    }
 
-            JsonNode imageList = response.getBody();
-            JSONArray images = imageList.getArray();
-            for (int i = 0; i < images.length(); i++) {
-                JSONObject image = images.getJSONObject(i);
-                String d = image.getString("label");
-                String f = image.getString("fw_version");
-                Boolean haveBinary = image.getBoolean("confirmed");
-                if (d.equals(imageLabel) && f.equals(version) && haveBinary) {
-                    return image.getString("id");
+    private String getImageId(String imageLabel, String version, String token) throws RuntimeException {
+        try {
+            HttpResponse<JsonNode> response = Unirest.get(this.mImageManagerUri)
+                .header("Authorization", "Bearer " + token).asJson();
+
+            if (response.getStatus() != 200) {
+                this.mLogger.warn("Failed to request image id to image manager. " +
+                "Http status: " + Integer.toString(response.getStatus()));
+            } else {
+                JsonNode imageList = response.getBody();
+                JSONArray images = imageList.getArray();
+                for (int i = 0; i < images.length(); i++) {
+                    JSONObject image = images.getJSONObject(i);
+                    String d = image.getString("label");
+                    String f = image.getString("fw_version");
+                    Boolean haveBinary = image.getBoolean("confirmed");
+                    if (d.equals(imageLabel) && f.equals(version) && haveBinary) {
+                        return image.getString("id");
+                    }
                 }
             }
-
-
         } catch (Exception e) {
-            e.printStackTrace();
-            mLogger.error(e);
+            this.mLogger.error(e.getMessage());
         }
-        throw new NoSuchElementException("Image not on Database");
+        throw new RuntimeException("Failed to get image id");
     }
 
-    private void DownloadImage(String imageId, String token) {
+    private void downloadImage(String imageId, String filename, String token) throws RuntimeException {
+        this.mLogger.debug("Downloading image (" + imageId + ") as " + filename);
         try {
-            HttpResponse<InputStream> fwInStream = Unirest.get(imageUrl + "/" + imageId + "/binary")
+            HttpResponse<InputStream> fwInStream = 
+                Unirest.get(this.mImageManagerUri + "/" + imageId + "/binary")
                     .header("Authorization", "Bearer " + token)
                     .asBinary();
+            if (fwInStream.getStatus() != 200) {
+                this.mLogger.warn("Failed to download the image from image manager. " +
+                    "Http status: " + Integer.toString(fwInStream.getStatus()));
+            } else {
+                InputStream in = fwInStream.getBody();
+                Path path = FileSystems.getDefault().getPath(this.mDataDir + "/" + filename);
 
-            InputStream in = fwInStream.getBody();
-            Path path = FileSystems.getDefault().getPath("./data/" + imageId + ".hex");
-            if (!Files.exists(path)) {
-                Files.createFile(path);
+                Path DestinationPath = FileSystems.getDefault().getPath(this.mDataDir);
+                if (!Files.exists(DestinationPath)) {
+                    Files.createDirectory(DestinationPath);
+                }
+                if (!Files.exists(path)) {
+                    Files.createFile(path);
+                }
+                Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
+                this.mLogger.info("Image " + imageId + " successfully downloaded.");
+                return;
             }
-            Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
-            e.printStackTrace();
-            mLogger.error(e);
+            this.mLogger.error(e.getMessage());
         }
+        throw new RuntimeException("Failed to download image");
     }
 
 

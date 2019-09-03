@@ -1,11 +1,12 @@
 package org.cpqd.iotagent;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import org.apache.commons.lang3.StringUtils;
+import org.cpqd.iotagent.lwm2m.objects.DevicePath;
+import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
 import org.eclipse.leshan.core.model.ResourceModel;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.apache.log4j.Logger;
 
 import java.util.Arrays;
 
@@ -19,13 +20,16 @@ public class DeviceAttribute {
     private String valueType;
     private Object staticValue;
     private String path;
+    private String templateId;
     private ResourceModel.Operations operations;
     private Boolean isLwM2MAttr;
+    Logger logger = Logger.getLogger(Device.class);
 
     public DeviceAttribute(JSONObject json) {
         this.label = json.getString("label");
         this.isLwM2MAttr = false;
         this.valueType = json.getString("value_type");
+        this.templateId = json.getString("template_id");
 
         this.type = json.getString("type");
         if (type.equals("static")) {
@@ -34,7 +38,7 @@ public class DeviceAttribute {
         } else if (type.equals("dynamic")) {
             this.operations = ResourceModel.Operations.R;
         } else if (type.equals("actuator")) {
-            this.operations = ResourceModel.Operations.RW;
+            this.operations = ResourceModel.Operations.W;
         } else {
             this.operations = ResourceModel.Operations.NONE;
         }
@@ -46,6 +50,9 @@ public class DeviceAttribute {
         for (int i = 0; i < meta.length(); ++i) {
             JSONObject metaAttr = meta.getJSONObject(i);
             String metaLabel = metaAttr.getString("label");
+            if (metaLabel.startsWith("dojot:firmware_update")) {
+                addPathOpMeta(metaLabel);
+            }
             if (metaLabel.equals("path")) {
                 this.path = metaAttr.getString("static_value");
                 this.isLwM2MAttr = true;
@@ -54,6 +61,34 @@ public class DeviceAttribute {
                     this.operations = ResourceModel.Operations.E;
                 }
             }
+        }
+    }
+
+    private void addPathOpMeta(String label) {
+        switch (label) {
+            case "dojot:firmware_update:state":
+                this.path = FirmwareUpdatePath.STATE;
+                this.isLwM2MAttr = true;
+                break;
+            case "dojot:firmware_update:update_result":
+                this.path = FirmwareUpdatePath.UPDATE_RESULT;
+                this.isLwM2MAttr = true;
+                break;
+            case "dojot:firmware_update:update":
+                this.path = FirmwareUpdatePath.UPDATE;
+                this.isLwM2MAttr = true;
+                this.operations = ResourceModel.Operations.E;
+                break;
+            case "dojot:firmware_update:desired_version":
+                this.path = FirmwareUpdatePath.PACKAGE_URI;
+                this.isLwM2MAttr = true;
+                break;
+            case "dojot:firmware_update:version":
+                this.path = DevicePath.FIRMWARE_VERSION;
+                this.isLwM2MAttr = true;
+                break;
+            default:
+                logger.debug("Didnt match any dojot:firmware_update");
         }
     }
 
@@ -75,6 +110,10 @@ public class DeviceAttribute {
 
     public String getValueType() {
         return this.valueType;
+    }
+
+    public String getTemplateId() {
+        return this.templateId;
     }
 
     public static Integer[] getIdsfromPath(String path) {

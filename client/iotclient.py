@@ -71,15 +71,14 @@ class IotClient(object):
         base_url = 'http://localhost:8000/template'
         r = requests.post(base_url, json=template, headers=self.headers)
         response = json.loads(r.text)
-        template_id = response['template']['id']
-        return template_id
+        return response['template']
 
     def create_device(self, device_payload):
         base_url = 'http://localhost:8000/device'
-        r = requests.post(base_url, json=device_payload, headers=self.headers, params={'verbose': True})
+        r = requests.post(base_url, json=device_payload, headers=self.headers, params={'verbose': False})
         response = json.loads(r.text)
         # device = response['devices'][0]
-        device_id = response['device']['id']
+        device_id = response['devices'][0]['id']
         return device_id
 
     def update_device(self, device_id, device_payload):
@@ -123,3 +122,8 @@ class IotClient(object):
         for template in response['templates']:
             url = base_url + "/" + str(template['id'])
             r = requests.delete(url, headers=self.headers)
+            
+    def gen_psk(self, device_id, key_len):
+        base_url = 'http://localhost:8000/device/gen_psk/' + device_id + '?key_length=' + str(key_len)
+        r = requests.post(base_url, headers=self.headers, params={'verbose': True})
+        return r.text

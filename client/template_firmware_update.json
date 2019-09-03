@@ -1,0 +1,119 @@
+{
+  "label": "firmware_update",
+  "attrs": [
+    {
+      "label": "fwu_package_uri",
+      "type": "actuator",
+      "value_type": "string",
+      "metadata": [
+        {
+          "label": "dojot:firmware_update:desired_version",
+          "type": "static",
+          "value_type": "boolean",
+          "static_value": true
+        },
+        {
+          "label": "path",
+          "type": "lwm2m",
+          "static_value": "/5/0/1",
+          "value_type": "string"
+        }
+      ]
+    },
+    {
+      "label": "fwu_state",
+      "type": "dynamic",
+      "value_type": "integer",
+      "metadata": [
+        {
+          "label": "dojot:firmware_update:state",
+          "type": "static",
+          "value_type": "boolean",
+          "static_value": true
+        },
+        {
+          "type": "lwm2m",
+          "label": "path",
+          "static_value": "/5/0/3",
+          "value_type": "string"
+        }
+      ]
+    },
+    {
+      "label": "fwu_update_result",
+      "type": "dynamic",
+      "value_type": "integer",
+      "metadata": [
+        {
+          "label": "dojot:firmware_update:update_result",
+          "type": "static",
+          "value_type": "boolean",
+          "static_value": true
+        },
+        {
+          "type": "lwm2m",
+          "label": "path",
+          "static_value": "/5/0/5",
+          "value_type": "string"
+        }
+      ]
+    },
+    {
+      "label": "fwu_update",
+      "type": "actuator",
+      "value_type": "string",
+      "metadata": [
+        {
+          "label": "dojot:firmware_update:update",
+          "type": "static",
+          "value_type": "boolean",
+          "static_value": true
+        },
+        {
+          "type": "lwm2m",
+          "label": "path",
+          "static_value": "/5/0/2",
+          "value_type": "string"
+        },
+        {
+          "type": "lwm2m",
+          "label": "operations",
+          "static_value": "e",
+          "value_type": "string"
+        }
+      ]
+    },
+    {
+      "label": "firmware_version",
+      "type": "dynamic",
+      "value_type": "string",
+      "metadata": [
+        {
+          "label": "dojot:firmware_update:version",
+          "type": "static",
+          "value_type": "boolean",
+          "static_value": true
+        },
+        {
+          "type": "lwm2m",
+          "label": "path",
+          "static_value": "/3/0/3",
+          "value_type": "string"
+        }
+      ]
+    },
+    {
+      "label": "fwu_protocol",
+      "type": "dynamic",
+      "value_type": "integer",
+      "metadata": [
+        {
+          "type": "lwm2m",
+          "label": "path",
+          "static_value": "/5/0/8",
+          "value_type": "string"
+        }
+      ]
+    }
+  ]
+}
