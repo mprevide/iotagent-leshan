@@ -10,6 +10,7 @@ In case of failure any request should fail silently
 
 import org.eclipse.leshan.core.request.ExecuteRequest;
 import org.eclipse.leshan.core.request.ObserveRequest;
+import org.eclipse.leshan.core.request.ContentFormat;
 import org.apache.log4j.Logger;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.core.request.ReadRequest;
@@ -41,7 +42,7 @@ public class LwM2mHandler {
         try {
             Integer pathArray[] = DeviceAttribute.getIdsfromPath(path);
             ObserveResponse response = server.send(registration,
-                new ObserveRequest(pathArray[0], pathArray[1], pathArray[2]), readTimout);
+                new ObserveRequest(ContentFormat.fromCode(ContentFormat.TLV_CODE), pathArray[0], pathArray[1], pathArray[2]), readTimout);
             if (response == null) {
                 this.mLogger.error("observe request timed out");
                 return null;
@@ -89,7 +90,7 @@ public class LwM2mHandler {
         try {
             Integer pathArray[] = DeviceAttribute.getIdsfromPath(path);
             ReadResponse response = server.send(registration,
-                new ReadRequest(pathArray[0], pathArray[1], pathArray[2]), readTimout);
+                new ReadRequest(ContentFormat.fromCode(ContentFormat.TLV_CODE), pathArray[0], pathArray[1], pathArray[2]), readTimout);
             if (response == null) {
                 this.mLogger.error("read request timed out");
                 return null;
@@ -117,7 +118,7 @@ public class LwM2mHandler {
         try {
             Integer pathArray[] = DeviceAttribute.getIdsfromPath(path);
             ReadResponse response = server.send(registration,
-                new ReadRequest(pathArray[0], pathArray[1], pathArray[2]), readTimout);
+                new ReadRequest(ContentFormat.fromCode(ContentFormat.TLV_CODE), pathArray[0], pathArray[1], pathArray[2]), readTimout);
             if (response == null) {
                 this.mLogger.error("read request timed out");
                 return null;
