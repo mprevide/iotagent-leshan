@@ -13,7 +13,7 @@ Using this agent you can:
 - use DTLS communication (only with PSK)
 - firmware update (Only the protocols COAP, COAPS and HTTP are supported. 
 Actually HTTPS is not supported. The delivery method PUSH is not supported)
-- deal with multidimensional resources (just reading, writing is not supported yet)
+- deal with multidimensional resources (just reading, writing is not supported yet)<br>
 Please note that:
 - LwM2M attributes are not supported
 
