@@ -7,6 +7,7 @@ import binascii
 import os
 import datetime
 import hashlib
+import sys
 
 
 def load_template(filename):
@@ -25,26 +26,42 @@ def get_sha1(filename):
 
 class IotClient(object):
     def __init__(self):
+
+        if len(sys.argv) == 4:
+            host = sys.argv[1]
+            login = sys.argv[2]
+            passwd = sys.argv[3]
+        else:
+            print('You can pass in command line: url, login and passwd for dojot.')
+            print('Eg: python3 filename.py http://test:8000 login pass')
+            host = 'http://localhost:8000'
+            login = 'admin'
+            passwd = 'admin'
+
+        print('Using url='+host+', login=' +
+              login+' and passwd='+passwd+'.')
+
+        self.host = host
+        self.login = login
+        self.passwd = passwd
         self.jwt_token = self.get_token()
         self.headers = {'Authorization': 'Bearer ' + self.jwt_token}
 
-
     def get_device_id(self, device_label, serial_number):
-        url_query = "http://localhost:8000/device?attr=device_type={}&serial_number={}".format(device_label, serial_number)
+        url_query = self.host+"/device?attr=device_type={}&serial_number={}".format(
+            device_label, serial_number)
         r = requests.get(url_query, headers=self.headers)
         devices = json.loads(r.text)["devices"]
         if not devices:
             return ""
         return devices[0]["id"]
 
-
     def get_token(self):
-        auth_url = 'http://localhost:8000/auth/'
-        r = requests.post(auth_url, json={"username": "admin", "passwd": "admin"})
+        auth_url = self.host+'/auth/'
+        r = requests.post(
+            auth_url, json={"username": self.login, "passwd": self.passwd})
         jwt_token = json.loads(r.text)['jwt']
         return jwt_token
-
-
 
     def upload_image(self, filename, template_name, fw_version):
         payload = {
@@ -53,10 +70,11 @@ class IotClient(object):
         }
 
         # Upload Metadata
-        base_url = 'http://localhost:8000/fw-image'
-        r = requests.post(base_url + "/image/", json=payload, headers=self.headers)
+        base_url = self.host+'/fw-image'
+        r = requests.post(base_url + "/image/",
+                          json=payload, headers=self.headers)
         image_url = json.loads(r.text)['url']
-        image_url =  base_url + image_url
+        image_url = base_url + image_url
         binary_url = image_url + "/binary"
         print(binary_url)
         # Upload File
@@ -66,24 +84,25 @@ class IotClient(object):
 
         return image_url
 
-
     def create_template(self, template):
-        base_url = 'http://localhost:8000/template'
+        base_url = self.host+'/template'
         r = requests.post(base_url, json=template, headers=self.headers)
         response = json.loads(r.text)
         return response['template']
 
     def create_device(self, device_payload):
-        base_url = 'http://localhost:8000/device'
-        r = requests.post(base_url, json=device_payload, headers=self.headers, params={'verbose': False})
+        base_url = self.host+'/device'
+        r = requests.post(base_url, json=device_payload,
+                          headers=self.headers, params={'verbose': False})
         response = json.loads(r.text)
         # device = response['devices'][0]
         device_id = response['devices'][0]['id']
         return device_id
 
     def update_device(self, device_id, device_payload):
-        base_url = 'http://localhost:8000/device/' + device_id
-        r = requests.put(base_url, json=device_payload, headers=self.headers, params={'verbose': True})
+        base_url = self.host+'/device/' + device_id
+        r = requests.put(base_url, json=device_payload,
+                         headers=self.headers, params={'verbose': True})
         response = json.loads(r.text)
         # device = response['devices'][0]
         device_id = response['device']['id']
@@ -93,37 +112,37 @@ class IotClient(object):
         actuate_payload = {
             "attrs": attrs
         }
-        base_url = 'http://localhost:8000/device/'
-        r = requests.put(base_url + device_id + '/actuate', json=actuate_payload, headers=self.headers)
-
+        base_url = self.host+'/device/'
+        r = requests.put(base_url + device_id + '/actuate',
+                         json=actuate_payload, headers=self.headers)
 
     def clear_images(self):
-        base_url = 'http://localhost:8000/fw-image/image'
+        base_url = self.host+'/fw-image/image'
         r = requests.get(base_url, headers=self.headers)
         response = json.loads(r.text)
         for image in response:
-            r = requests.delete(base_url+ "/"+image['id'], headers=self.headers)
-
-
+            r = requests.delete(
+                base_url + "/"+image['id'], headers=self.headers)
 
     def clear_devices(self):
-        base_url = 'http://localhost:8000/device'
+        base_url = self.host+'/device'
         r = requests.get(base_url, headers=self.headers)
         response = json.loads(r.text)
         for device in response['devices']:
             url = base_url + "/" + device['id']
             r = requests.delete(url, headers=self.headers)
 
-
     def clear_templates(self):
-        base_url = 'http://localhost:8000/template'
+        base_url = self.host+'/template'
         r = requests.get(base_url, headers=self.headers)
         response = json.loads(r.text)
         for template in response['templates']:
             url = base_url + "/" + str(template['id'])
             r = requests.delete(url, headers=self.headers)
-            
+
     def gen_psk(self, device_id, key_len):
-        base_url = 'http://localhost:8000/device/gen_psk/' + device_id + '?key_length=' + str(key_len)
-        r = requests.post(base_url, headers=self.headers, params={'verbose': True})
+        base_url = self.host+'/device/gen_psk/' + \
+            device_id + '?key_length=' + str(key_len)
+        r = requests.post(base_url, headers=self.headers,
+                          params={'verbose': True})
         return r.text
