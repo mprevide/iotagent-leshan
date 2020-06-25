@@ -91,7 +91,7 @@ public class LwM2MAgent implements Runnable {
      * @return
      */
     private void sendsUriToDevice(Registration registration, String imageLabel,
-                                     String newFwVersion, String tenant, boolean isDeviceSecure) {
+                                     String newFwVersion, String tenant, boolean isDeviceSecure, String uri) {
 
         logger.debug("Will try to send URI to device");
 
@@ -138,7 +138,10 @@ public class LwM2MAgent implements Runnable {
 
             String fileUri = null;
             try {
-                fileUri = imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion, supportedProtocol);
+				fileUri = uri == null
+						? imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion,
+								supportedProtocol)
+						: uri;
             } catch (Exception e) {
                 logger.error(e.getMessage());
                 return;
@@ -465,7 +468,7 @@ public class LwM2MAgent implements Runnable {
                     String imageVersion = attrs.getString(targetAttr);
                     String imageLabel = devAttr.getTemplateId();
                     logger.info("Image id that came on actuation: " + imageVersion);
-                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, device.isSecure());
+                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, device.isSecure(), null);
                     continue;
                 }
 
@@ -514,6 +517,14 @@ public class LwM2MAgent implements Runnable {
                 requestHandler.CancelAllObservations(controlStructure.registration);
                 observeResources(controlStructure.deviceId, controlStructure.tenant,
                         device.getReadableAttributes(), controlStructure.registration);
+				// wfc inic
+				Map<String, String> automaticFirmwareUpdateInfo = new AutomaticFirmwareUpdate(registration, deviceJson).download();
+				if (automaticFirmwareUpdateInfo != null) {
+					sendsUriToDevice(registration, null,
+							automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.DESIRED_FIRMWARE), null,
+							device.isSecure(), automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.FIRMWARE_URI));
+				}
+				// wfc fim
             } else {
                 logger.debug("skpping observing, northbound is not registered yet");
             }
@@ -598,6 +609,12 @@ public class LwM2MAgent implements Runnable {
 
             eventHandler.updateAttrs(controlStructure.deviceId,
                 controlStructure.tenant, attrJson, null);
+            
+			// wfc inic
+			if (new AutomaticFirmwareUpdate(registration, deviceJson).applyImage(attrJson)) {
+				requestHandler.ExecuteResource(registration, FirmwareUpdatePath.UPDATE, "1");
+			}
+			// wfc fim
         }
 
         @Override
