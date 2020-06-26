@@ -518,7 +518,7 @@ public class LwM2MAgent implements Runnable {
                 observeResources(controlStructure.deviceId, controlStructure.tenant,
                         device.getReadableAttributes(), controlStructure.registration);
 				// wfc inic
-				Map<String, String> automaticFirmwareUpdateInfo = new AutomaticFirmwareUpdate(registration, deviceJson).download();
+				Map<String, String> automaticFirmwareUpdateInfo = new AutomaticFirmwareUpdate(deviceJson).download();
 				if (automaticFirmwareUpdateInfo != null) {
 					sendsUriToDevice(registration, null,
 							automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.DESIRED_FIRMWARE), null,
@@ -611,7 +611,7 @@ public class LwM2MAgent implements Runnable {
                 controlStructure.tenant, attrJson, null);
             
 			// wfc inic
-			if (new AutomaticFirmwareUpdate(registration, deviceJson).applyImage(attrJson)) {
+			if (new AutomaticFirmwareUpdate(deviceJson).applyImage(attrJson)) {
 				requestHandler.ExecuteResource(registration, FirmwareUpdatePath.UPDATE, "1");
 			}
 			// wfc fim

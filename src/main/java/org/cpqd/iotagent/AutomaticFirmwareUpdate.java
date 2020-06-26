@@ -5,9 +5,11 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.cpqd.iotagent.lwm2m.utils.DeviceAttrUtils;
-import org.eclipse.leshan.server.registration.Registration;
 import org.json.JSONObject;
 
+/**
+ * Help listeners take decisions about automatic firmware update.
+ */
 public class AutomaticFirmwareUpdate {
 
 	private Logger logger = Logger.getLogger(AutomaticFirmwareUpdate.class);
@@ -15,21 +17,25 @@ public class AutomaticFirmwareUpdate {
 	public static final String DESIRED_FIRMWARE = "desired_firmware";
 	public static final String FIRMWARE_URI = "uri";
 
+	public static final String LABEL = "label";
 	private static final String IMAGE_STATE = "image_state";
 	private static final Long DOWNLOADED = 2L;
 
-	private Registration registration;
 	private JSONObject device;
 
 	private String desiredFirmware;
 	private String firmwareUri;
 
-	public AutomaticFirmwareUpdate(Registration registration, JSONObject device) {
-		this.registration = registration;
+	public AutomaticFirmwareUpdate(JSONObject device) {
 		this.device = device;
 
 	}
 
+	/**
+	 * 
+	 * @return a map with download information or null if the device does not
+	 *         supports automatic firmware update.
+	 */
 	public Map<String, String> download() {
 
 		if (check()) {
@@ -46,6 +52,11 @@ public class AutomaticFirmwareUpdate {
 
 	}
 
+	/**
+	 * @param firmware update object state.
+	 * @return a boolean describing if the device can receive an apply image
+	 *         instruction.
+	 */
 	public boolean applyImage(JSONObject state) {
 
 		if (check() && state.has(IMAGE_STATE)) {
@@ -56,9 +67,14 @@ public class AutomaticFirmwareUpdate {
 
 	}
 
+	/**
+	 * 
+	 * @return a boolean describing if the device supports automatic firmware
+	 *         update.
+	 */
 	private boolean check() {
 
-		logger.debug("Checking if device " + registration.getEndpoint() + " supports automatic firmware update");
+		logger.debug("Checking if device " + device.getString(LABEL) + " supports automatic firmware update");
 
 		desiredFirmware = DeviceAttrUtils.getStringAttr(DESIRED_FIRMWARE, "static_value", device);
 		if (desiredFirmware != null) {
@@ -69,9 +85,9 @@ public class AutomaticFirmwareUpdate {
 				&& !desiredFirmware.isEmpty());
 
 		if (result) {
-			logger.debug("The device " + registration.getEndpoint() + " supports automatic firmware update");
+			logger.debug("The device " + device.getString(LABEL) + " supports automatic firmware update");
 		} else {
-			logger.debug("The device " + registration.getEndpoint() + " does not support automatic firmware update");
+			logger.debug("The device " + device.getString(LABEL) + " does not support automatic firmware update");
 		}
 
 		return result;
