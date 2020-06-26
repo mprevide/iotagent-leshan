@@ -5,7 +5,6 @@ import org.json.JSONObject;
 
 public class DeviceAttrUtils {
 
-
 	private DeviceAttrUtils() {
 
 	}
@@ -37,6 +36,10 @@ public class DeviceAttrUtils {
 
 	public static String getStringMetaAttr(String attr, String prop, String metaAttr, JSONObject device) {
 		JSONObject jsonObject = get(attr, device);
+
+		if (jsonObject == null || !jsonObject.has("metadata")) {
+			return null;
+		}
 		JSONArray attrMetadata = jsonObject.getJSONArray("metadata");
 		for (int k = 0; k < attrMetadata.length(); ++k) {
 			JSONObject md = attrMetadata.getJSONObject(k);
@@ -44,6 +47,7 @@ public class DeviceAttrUtils {
 				return md.getString(prop);
 			}
 		}
+
 		return null;
 
 	}
