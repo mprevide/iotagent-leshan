@@ -3,6 +3,7 @@ package org.cpqd.iotagent;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.cpqd.iotagent.lwm2m.utils.DeviceAttrUtils;
 import org.json.JSONObject;
@@ -75,14 +76,13 @@ public class AutomaticFirmwareUpdate {
 	private boolean check() {
 
 		logger.debug("Checking if device " + device.getString(LABEL) + " supports automatic firmware update");
-
+	
 		desiredFirmware = DeviceAttrUtils.getStringAttr(DESIRED_FIRMWARE, "static_value", device);
 		if (desiredFirmware != null) {
 			firmwareUri = DeviceAttrUtils.getStringMetaAttr(DESIRED_FIRMWARE, "static_value", FIRMWARE_URI, device);
 		}
-
-		boolean result = (firmwareUri != null && !firmwareUri.isEmpty() && desiredFirmware != null
-				&& !desiredFirmware.isEmpty());
+	
+		boolean result = (!StringUtils.isBlank(desiredFirmware) && !StringUtils.isBlank(firmwareUri));
 
 		if (result) {
 			logger.debug("The device " + device.getString(LABEL) + " supports automatic firmware update");
