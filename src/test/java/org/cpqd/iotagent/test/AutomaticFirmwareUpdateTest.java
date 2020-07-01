@@ -26,6 +26,9 @@ public class AutomaticFirmwareUpdateTest {
 
 		List<JSONObject> meta = new ArrayList<JSONObject>();
 		meta.add(new JSONObject().put("label", "uri").put("static_value", "http://<image_uri>"));
+		meta.add(new JSONObject().put("label", "description").put("static_value", "some note"));
+		meta.add(new JSONObject().put("label", "mandatory").put("static_value", "true"));
+		meta.add(new JSONObject().put("label", "image_id").put("static_value", "a12829b3-ad38-43cd-8c2d-1364d7e6bc76"));
 
 		List<JSONObject> list = new ArrayList<JSONObject>();
 		list.add(new JSONObject().put("label", "desired_firmware").put("static_value", "1.0.0").put("metadata",
@@ -41,6 +44,9 @@ public class AutomaticFirmwareUpdateTest {
 
 		assertEquals("The desired firmware does not match", "1.0.0", result.get("desired_firmware"));
 		assertEquals("The image uri does not match", "http://<image_uri>", result.get("uri"));
+		assertEquals("The description does not match", "some note", result.get("description"));
+		assertEquals("The mandatory flag does not match", "true", result.get("mandatory"));
+		assertEquals("The image id does not match", "a12829b3-ad38-43cd-8c2d-1364d7e6bc76", result.get("image_id"));
 
 	}
 
@@ -157,6 +163,9 @@ public class AutomaticFirmwareUpdateTest {
 
 		List<JSONObject> meta = new ArrayList<JSONObject>();
 		meta.add(new JSONObject().put("label", "uri").put("static_value", "http://<image_uri>"));
+		meta.add(new JSONObject().put("label", "description").put("static_value", "some note"));
+		meta.add(new JSONObject().put("label", "mandatory").put("static_value", "true"));
+		meta.add(new JSONObject().put("label", "image_id").put("static_value", "a12829b3-ad38-43cd-8c2d-1364d7e6bc76"));
 
 		List<JSONObject> list = new ArrayList<JSONObject>();
 		list.add(new JSONObject().put("label", "desired_firmware").put("static_value", "1.0.0").put("metadata",
