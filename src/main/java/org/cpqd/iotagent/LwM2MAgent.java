@@ -3,6 +3,7 @@ package org.cpqd.iotagent;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Vector;
@@ -14,8 +15,8 @@ import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
 import org.cpqd.iotagent.lwm2m.objects.SecurityPath;
 import org.eclipse.leshan.core.node.LwM2mMultipleResource;
 import org.eclipse.leshan.core.node.LwM2mNode;
-import org.eclipse.leshan.core.node.LwM2mSingleResource;
 import org.eclipse.leshan.core.node.LwM2mResource;
+import org.eclipse.leshan.core.node.LwM2mSingleResource;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeEncoder;
 import org.eclipse.leshan.core.observation.Observation;
@@ -90,8 +91,8 @@ public class LwM2MAgent implements Runnable {
      * @param registration, newFwVersion, tenant
      * @return
      */
-    private void sendsUriToDevice(Registration registration, String imageLabel,
-                                     String newFwVersion, String tenant, boolean isDeviceSecure, String uri) {
+	private void sendsUriToDevice(Registration registration, String imageLabel, String newFwVersion, String tenant,
+			boolean isDeviceSecure, String imageId, Map<String, String> queryParams) {
 
         logger.debug("Will try to send URI to device");
 
@@ -138,10 +139,8 @@ public class LwM2MAgent implements Runnable {
 
             String fileUri = null;
             try {
-				fileUri = uri == null
-						? imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion,
-								supportedProtocol)
-						: uri;
+				fileUri = imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion,
+						supportedProtocol, imageId, queryParams);
             } catch (Exception e) {
                 logger.error(e.getMessage());
                 return;
@@ -468,7 +467,7 @@ public class LwM2MAgent implements Runnable {
                     String imageVersion = attrs.getString(targetAttr);
                     String imageLabel = devAttr.getTemplateId();
                     logger.info("Image id that came on actuation: " + imageVersion);
-                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, device.isSecure(), null);
+                    this.sendsUriToDevice(controlStruture.registration, imageLabel, imageVersion, tenant, device.isSecure(), null, null);
                     continue;
                 }
 
@@ -520,9 +519,14 @@ public class LwM2MAgent implements Runnable {
 				// wfc inic
 				Map<String, String> automaticFirmwareUpdateInfo = new AutomaticFirmwareUpdate(deviceJson).download();
 				if (automaticFirmwareUpdateInfo != null) {
+					Map<String, String> queryParams = new LinkedHashMap<>();
+					queryParams.put("m", automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.MANDATORY));
+					queryParams.put("d", automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.NOTES));
+
 					sendsUriToDevice(registration, null,
-							automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.DESIRED_FIRMWARE), null,
-							device.isSecure(), automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.FIRMWARE_URI));
+							automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.DESIRED_FIRMWARE),
+							controlStructure.tenant, device.isSecure(),
+							automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.IMAGE_ID), queryParams);
 				}
 				// wfc fim
             } else {

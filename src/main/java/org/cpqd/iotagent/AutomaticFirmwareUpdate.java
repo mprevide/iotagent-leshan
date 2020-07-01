@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.cpqd.iotagent.lwm2m.utils.DeviceAttrUtils;
 import org.json.JSONObject;
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * Help listeners take decisions about automatic firmware update.
@@ -111,8 +112,8 @@ public class AutomaticFirmwareUpdate {
 		Map<String, String> map = new HashMap<>();
 		map.put(DESIRED_FIRMWARE, StringUtils.isBlank(desiredFirmware) ? null : desiredFirmware);
 		map.put(FIRMWARE_URI, StringUtils.isBlank(uri) ? null : uri);
-		map.put(NOTES, StringUtils.isBlank(notes) ? "" : notes);
-		map.put(MANDATORY, StringUtils.isBlank(mandatory) ? null : mandatory);
+		map.put(NOTES, StringUtils.isBlank(notes) ? "" : Base64.encodeBase64String(notes.getBytes()));
+		map.put(MANDATORY, "true".equals(mandatory) ? "t" : "f");
 		map.put(IMAGE_ID, StringUtils.isBlank(imageId) ? null : imageId);
 
 		return map;
