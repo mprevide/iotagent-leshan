@@ -516,7 +516,6 @@ public class LwM2MAgent implements Runnable {
                 requestHandler.CancelAllObservations(controlStructure.registration);
                 observeResources(controlStructure.deviceId, controlStructure.tenant,
                         device.getReadableAttributes(), controlStructure.registration);
-				// wfc inic
 				Map<String, String> automaticFirmwareUpdateInfo = new AutomaticFirmwareUpdate(deviceJson).download();
 				if (automaticFirmwareUpdateInfo != null) {
 					Map<String, String> queryParams = new LinkedHashMap<>();
@@ -528,7 +527,6 @@ public class LwM2MAgent implements Runnable {
 							controlStructure.tenant, device.isSecure(),
 							automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.IMAGE_ID), queryParams);
 				}
-				// wfc fim
             } else {
                 logger.debug("skpping observing, northbound is not registered yet");
             }
@@ -614,11 +612,11 @@ public class LwM2MAgent implements Runnable {
             eventHandler.updateAttrs(controlStructure.deviceId,
                 controlStructure.tenant, attrJson, null);
             
-			// wfc inic
+			
 			if (new AutomaticFirmwareUpdate(deviceJson).applyImage(attrJson)) {
 				requestHandler.ExecuteResource(registration, FirmwareUpdatePath.UPDATE, "1");
 			}
-			// wfc fim
+			
         }
 
         @Override
