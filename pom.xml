@@ -148,6 +148,12 @@
             <artifactId>jetty-server</artifactId>
             <version>9.4.20.v20190813</version>
         </dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13</version>
+			<scope>test</scope>
+		</dependency>
     </dependencies>
 
 </project>
