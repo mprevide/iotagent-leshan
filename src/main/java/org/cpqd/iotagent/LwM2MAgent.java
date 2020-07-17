@@ -13,6 +13,7 @@ import org.cpqd.iotagent.DeviceMapper.DeviceControlStructure;
 import org.cpqd.iotagent.lwm2m.objects.DevicePath;
 import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
 import org.cpqd.iotagent.lwm2m.objects.SecurityPath;
+import org.cpqd.iotagent.lwm2m.utils.LwM2MEvent;
 import org.eclipse.leshan.core.node.LwM2mMultipleResource;
 import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.node.LwM2mResource;
@@ -48,6 +49,7 @@ public class LwM2MAgent implements Runnable {
     private IoTAgent eventHandler;
     private InMemorySecurityStore securityStore;
     private FileServerPskStore fsPskStore;
+    private StatusPublisher statusPublisher;
 
 
     public LwM2MAgent(long consumerPollTime, ImageDownloader imageDownloader, FileServerPskStore pskStore) {
@@ -61,6 +63,7 @@ public class LwM2MAgent implements Runnable {
         this.securityStore = new InMemorySecurityStore();
         this.imageDownloader = imageDownloader;
         this.fsPskStore = pskStore;
+        this.statusPublisher = new StatusPublisher(eventHandler);
 
         // register the callbacks to treat the events
         this.eventHandler.on("iotagent.device", "device.create", this::on_create);
@@ -516,6 +519,7 @@ public class LwM2MAgent implements Runnable {
                 requestHandler.CancelAllObservations(controlStructure.registration);
                 observeResources(controlStructure.deviceId, controlStructure.tenant,
                         device.getReadableAttributes(), controlStructure.registration);
+                
 				Map<String, String> automaticFirmwareUpdateInfo = new AutomaticFirmwareUpdate(deviceJson).download();
 				if (automaticFirmwareUpdateInfo != null) {
 					Map<String, String> queryParams = new LinkedHashMap<>();
@@ -527,6 +531,9 @@ public class LwM2MAgent implements Runnable {
 							controlStructure.tenant, device.isSecure(),
 							automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.IMAGE_ID), queryParams);
 				}
+				
+				statusPublisher.publish(controlStructure.deviceId, controlStructure.tenant, LwM2MEvent.REGISTER);
+				
             } else {
                 logger.debug("skpping observing, northbound is not registered yet");
             }
@@ -538,6 +545,7 @@ public class LwM2MAgent implements Runnable {
             logger.debug("updated: " + update.toString());
 
             deviceMapper.addSouthboundAssociation(updatedReg.getEndpoint(), updatedReg);
+
         }
 
         @Override
@@ -548,6 +556,11 @@ public class LwM2MAgent implements Runnable {
             logger.debug("device left: " + registration.getEndpoint());
 
             deviceMapper.removeSouthboundAssociation(registration.getEndpoint());
+            
+			DeviceControlStructure deviceControlStructure = deviceMapper
+					.getDeviceControlStructure(registration.getEndpoint());
+			statusPublisher.publish(deviceControlStructure.deviceId, deviceControlStructure.tenant,
+					LwM2MEvent.UNREGISTER);
         }
     };
 
