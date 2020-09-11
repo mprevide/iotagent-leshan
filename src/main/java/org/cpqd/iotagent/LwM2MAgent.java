@@ -14,6 +14,7 @@ import org.cpqd.iotagent.lwm2m.objects.DevicePath;
 import org.cpqd.iotagent.lwm2m.objects.FirmwareUpdatePath;
 import org.cpqd.iotagent.lwm2m.objects.SecurityPath;
 import org.cpqd.iotagent.lwm2m.utils.LwM2MEvent;
+import org.cpqd.iotagent.lwm2m.utils.ResourceBlackListMgmt;
 import org.eclipse.leshan.core.node.LwM2mMultipleResource;
 import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.node.LwM2mResource;
@@ -370,7 +371,11 @@ public class LwM2MAgent implements Runnable {
                     throw new Exception();
                 }
                 attrJson = transformLwm2mResourceValueIntoJson(attr, resource);
-                allAttrsJson.put(attr.getLabel(), attrJson.get(attr.getLabel()));
+                
+				if (!ResourceBlackListMgmt.getInstance().check(path, attrJson.get(attr.getLabel()).toString())) {
+					allAttrsJson.put(attr.getLabel(), attrJson.get(attr.getLabel()));
+				}
+                
             } catch (Exception e) {
                 this.logger.warn("Failed to observe resource: " + attr.getLwm2mPath());
             }
