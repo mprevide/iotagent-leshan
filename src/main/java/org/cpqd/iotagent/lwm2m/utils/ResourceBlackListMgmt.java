@@ -41,7 +41,7 @@ public class ResourceBlackListMgmt {
 	}
 
 	public boolean isBlackListed(String resource, String value) {
-		LOGGER.debug("checking if the the value: " + value + "of resource " + resource + " is blacklisted.");
+		LOGGER.debug("checking if the the value: " + value + " of resource " + resource + " is blacklisted.");
 		return !map.containsKey(resource) ? Boolean.FALSE : map.get(resource).equalsIgnoreCase(value);
 
 	}
