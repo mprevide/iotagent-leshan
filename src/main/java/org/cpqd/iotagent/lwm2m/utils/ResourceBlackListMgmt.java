@@ -40,11 +40,8 @@ public class ResourceBlackListMgmt {
 
 	}
 
-	public boolean contains(String resource) {
-		return map.containsKey(resource);
-	}
-
-	public boolean check(String resource, String value) {
+	public boolean isBlackListed(String resource, String value) {
+		LOGGER.debug("checking if the the value: " + value + "of resource " + resource + " is blacklisted.");
 		return !map.containsKey(resource) ? Boolean.FALSE : map.get(resource).equalsIgnoreCase(value);
 
 	}

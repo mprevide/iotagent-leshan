@@ -44,21 +44,21 @@ public class ResourceBlackListMgmtTest {
 	public void shouldReturnTrueWhenTheValueIsBlackListed() {
 
 		String resource = "/0/0/0";
-		assertTrue(ResourceBlackListMgmt.getInstance().check(resource, ""));
+		assertTrue(ResourceBlackListMgmt.getInstance().isBlackListed(resource, ""));
 	}
 
 	@Test
 	public void shouldReturnFalseWhenResourceWasNotDefined() {
 
 		String resource = "/5/0/1";
-		assertFalse(ResourceBlackListMgmt.getInstance().check(resource, ""));
+		assertFalse(ResourceBlackListMgmt.getInstance().isBlackListed(resource, ""));
 	}
 
 	@Test
 	public void shouldReturnFalseWhenValueIsNotBlackListed() {
 
 		String resource = "/0/0/0";
-		assertFalse(ResourceBlackListMgmt.getInstance().check(resource, "85.3"));
+		assertFalse(ResourceBlackListMgmt.getInstance().isBlackListed(resource, "85.3"));
 	}
 
 }
