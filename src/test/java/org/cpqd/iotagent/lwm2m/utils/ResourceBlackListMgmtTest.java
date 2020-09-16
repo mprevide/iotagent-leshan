@@ -43,7 +43,7 @@ public class ResourceBlackListMgmtTest {
 	@Test
 	public void shouldReturnTrueWhenTheValueIsBlackListed() {
 
-		String resource = "/0/0/0";
+		String resource = "/40000/0/0";
 		assertTrue(ResourceBlackListMgmt.getInstance().isBlackListed(resource, ""));
 	}
 
