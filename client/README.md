@@ -32,13 +32,13 @@ Check the [pipenv repository](https://github.com/pypa/pipenv/) for more commands
 
 ### Simulating a device
 
-#### Create a device to use with simulator
+#### Create a device to use with the simulator
 
 ```shell
 python3 create_lwm2m_devices.py http://localhost:8000  admin admin
 ```
 
-This command will create n device (`unsecure-dev-0`) with 3 templates (`lwm2m`, `firmware_update` and `Temperature`) in a dojot running at
+This command will create a device (`unsecure-dev-0`) with 3 templates (`lwm2m`, `firmware_update` and `Temperature`) in a dojot running at
  http://localhost:8000 and accessible by the user `admin` and password `admin`.
 
 
@@ -63,7 +63,7 @@ To execute the simulator:
 java -jar target/leshan-client-demo-1.0.0-M10-jar-with-dependencies.jar -n unsecure-client-endpoint-0 -u localhost:5683
 ```
 
-In this case, the simulator will publish to device `unsecure-client-endpoint-0` in a dojot ruining at `localhost` to the `coap` port  (`udp`) `5683`.
+In this case, the simulator will publish to the device `unsecure-client-endpoint-0` in a dojot running at `localhost` to the `coap` port  (`udp`) `5683`.
 
 
 To view all available options:
