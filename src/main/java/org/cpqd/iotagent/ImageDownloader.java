@@ -52,8 +52,8 @@ public class ImageDownloader {
 
         String imageFilename = null;
         try {
-			imageFilename = imageId == null ? this.fetchImage(tenant, imageLabel, version)
-					: this.fetchImage(tenant, imageId);
+            imageFilename = imageId == null ? this.fetchImage(tenant, imageLabel, version)
+                    : this.fetchImage(tenant, imageId);
         } catch (Exception e) {
             this.mLogger.error(e.getMessage());
             throw new RuntimeException("Failed to download and generate URI");
@@ -83,11 +83,11 @@ public class ImageDownloader {
                 throw new RuntimeException("Failed to generate URI");
         }
 		
-		if (queryParams != null) {
-			StringBuilder sb = new StringBuilder(uri);
-			queryParams.forEach((key, value) -> sb.append("&" + key + "=" + value));
-			uri = sb.toString();
-		}
+        if (queryParams != null) {
+            StringBuilder sb = new StringBuilder(uri);
+            queryParams.forEach((key, value) -> sb.append("&" + key + "=" + value));
+            uri = sb.toString();
+        }
         
         return uri;
     }

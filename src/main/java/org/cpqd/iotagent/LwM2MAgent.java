@@ -143,8 +143,8 @@ public class LwM2MAgent implements Runnable {
 
             String fileUri = null;
             try {
-				fileUri = imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion,
-						supportedProtocol, imageId, queryParams);
+                fileUri = imageDownloader.downloadImageAndGenerateUri(tenant, imageLabel, newFwVersion,
+                        supportedProtocol, imageId, queryParams);
             } catch (Exception e) {
                 logger.error(e.getMessage());
                 return;
