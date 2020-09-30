@@ -13,6 +13,8 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
+
 import com.cpqd.app.auth.Auth;
 
 /**
@@ -45,12 +47,13 @@ public class ImageDownloader {
         this.mDataDir = dataDir;
     }
 
-    public String downloadImageAndGenerateUri(String tenant, String imageLabel,
-        String version, int protocol) {
+	public String downloadImageAndGenerateUri(String tenant, String imageLabel, String version, int protocol,
+			String imageId, Map<String, String> queryParams) {
 
         String imageFilename = null;
         try {
-            imageFilename = this.fetchImage(tenant, imageLabel, version);
+            imageFilename = imageId == null ? this.fetchImage(tenant, imageLabel, version)
+                    : this.fetchImage(tenant, imageId);
         } catch (Exception e) {
             this.mLogger.error(e.getMessage());
             throw new RuntimeException("Failed to download and generate URI");
@@ -79,6 +82,13 @@ public class ImageDownloader {
                 this.mLogger.error("Unknown protocol: " + protocol);
                 throw new RuntimeException("Failed to generate URI");
         }
+		
+		if (queryParams != null) {
+			StringBuilder sb = new StringBuilder(uri);
+			queryParams.forEach((key, value) -> sb.append("&" + key + "=" + value));
+			uri = sb.toString();
+		}
+        
         return uri;
     }
 
@@ -99,6 +109,22 @@ public class ImageDownloader {
 
         return filename;
     }
+    
+	private String fetchImage(String tenant, String imageId) throws RuntimeException {
+
+		this.mLogger.debug("Fetching image with id: " + imageId);
+		String filename = null;
+		try {
+			String token = Auth.getInstance().getToken(tenant);
+			filename = tenant + "-" + imageId;
+			this.downloadImage(imageId, filename, token);
+		} catch (Exception e) {
+			this.mLogger.error(e.getMessage());
+			throw new RuntimeException("Failed to fetch image");
+		}
+
+		return filename;
+	}
 
     private String getImageId(String imageLabel, String version, String token) throws RuntimeException {
         try {
