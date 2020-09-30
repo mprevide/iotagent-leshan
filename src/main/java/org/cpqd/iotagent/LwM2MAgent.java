@@ -528,19 +528,19 @@ public class LwM2MAgent implements Runnable {
                 observeResources(controlStructure.deviceId, controlStructure.tenant,
                         device.getReadableAttributes(), controlStructure.registration);
                 
-				Map<String, String> automaticFirmwareUpdateInfo = new AutomaticFirmwareUpdate(deviceJson).download();
-				if (automaticFirmwareUpdateInfo != null) {
-					Map<String, String> queryParams = new LinkedHashMap<>();
-					queryParams.put("m", automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.MANDATORY));
-					queryParams.put("d", automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.NOTES));
+                Map<String, String> automaticFirmwareUpdateInfo = new AutomaticFirmwareUpdate(deviceJson).download();
+                if (automaticFirmwareUpdateInfo != null) {
+                    Map<String, String> queryParams = new LinkedHashMap<>();
+                    queryParams.put("m", automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.MANDATORY));
+                    queryParams.put("d", automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.NOTES));
 
-					sendsUriToDevice(registration, null,
-							automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.DESIRED_FIRMWARE),
-							controlStructure.tenant, device.isSecure(),
-							automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.IMAGE_ID), queryParams);
-				}
-				
-				statusPublisher.publish(controlStructure.deviceId, controlStructure.tenant, LwM2MEvent.REGISTER);
+                    sendsUriToDevice(registration, null,
+                            automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.DESIRED_FIRMWARE),
+                            controlStructure.tenant, device.isSecure(),
+                            automaticFirmwareUpdateInfo.get(AutomaticFirmwareUpdate.IMAGE_ID), queryParams);
+                }
+
+                statusPublisher.publish(controlStructure.deviceId, controlStructure.tenant, LwM2MEvent.REGISTER);
 				
             } else {
                 logger.debug("skpping observing, northbound is not registered yet");
@@ -565,10 +565,10 @@ public class LwM2MAgent implements Runnable {
 
             deviceMapper.removeSouthboundAssociation(registration.getEndpoint());
             
-			DeviceControlStructure deviceControlStructure = deviceMapper
-					.getDeviceControlStructure(registration.getEndpoint());
-			statusPublisher.publish(deviceControlStructure.deviceId, deviceControlStructure.tenant,
-					LwM2MEvent.UNREGISTER);
+            DeviceControlStructure deviceControlStructure = deviceMapper
+                    .getDeviceControlStructure(registration.getEndpoint());
+            statusPublisher.publish(deviceControlStructure.deviceId, deviceControlStructure.tenant,
+                    LwM2MEvent.UNREGISTER);
         }
     };
 
@@ -634,9 +634,9 @@ public class LwM2MAgent implements Runnable {
                 controlStructure.tenant, attrJson, null);
             
 			
-			if (new AutomaticFirmwareUpdate(deviceJson).applyImage(attrJson)) {
-				requestHandler.ExecuteResource(registration, FirmwareUpdatePath.UPDATE, "1");
-			}
+            if (new AutomaticFirmwareUpdate(deviceJson).applyImage(attrJson)) {
+                requestHandler.ExecuteResource(registration, FirmwareUpdatePath.UPDATE, "1");
+            }
 			
         }
 
