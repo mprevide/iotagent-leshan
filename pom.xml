@@ -70,7 +70,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
-    <repositories>
+     <repositories>
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
@@ -131,7 +131,7 @@
         <dependency>
             <groupId>com.github.dojot</groupId>
             <artifactId>iotagent-java</artifactId>
-            <version>9235705b17ae4a9ca75c1109102cf176c9ce328f</version>
+            <version>feature-flag_device_status-1.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.dojot</groupId>
@@ -148,6 +148,24 @@
             <artifactId>jetty-server</artifactId>
             <version>9.4.20.v20190813</version>
         </dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>1.6.4</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-mockito</artifactId>
+			<version>1.6.4</version>
+			<scope>test</scope>
+		</dependency>
     </dependencies>
 
 </project>

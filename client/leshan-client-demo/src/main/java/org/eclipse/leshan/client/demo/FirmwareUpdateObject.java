@@ -199,7 +199,7 @@ public class FirmwareUpdateObject extends BaseInstanceEnabler {
     }
 
     private Boolean checkURI(String URI) {
-        return URI.endsWith(".hex");
+    	return URI.endsWith(".hex");
     }
 
 
