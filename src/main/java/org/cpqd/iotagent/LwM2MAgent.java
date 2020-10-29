@@ -372,8 +372,8 @@ public class LwM2MAgent implements Runnable {
                 }
                 attrJson = transformLwm2mResourceValueIntoJson(attr, resource);
                 
-                String receivedValue = attrJson.get(attr.getLabel()).toString();
-                if (!ResourceBlackListMgmt.getInstance().isBlackListed(path, receivedValue)) {
+                Object receivedValue = attrJson.get(attr.getLabel());
+                if (!ResourceBlackListMgmt.getInstance().isBlackListed(path, String.valueOf(receivedValue))) {
                     allAttrsJson.put(attr.getLabel(), receivedValue);
                 } else {
                     logger.info("The value " + receivedValue + " of resource " + path + " was discarted");
