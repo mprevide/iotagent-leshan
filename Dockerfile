@@ -14,4 +14,4 @@ ADD fileServerCoAP.properties /usr/src/app/fileServerCoAP.properties
 ADD src /usr/src/app/src
 RUN ["mvn", "package"]
 
-CMD ["java", "-jar", "target/iotagent-leshan-1.0-SNAPSHOT-jar-with-dependencies.jar"]
+CMD ["java", "-jar", "target/iotagent-leshan-1.1.0-jar-with-dependencies.jar"]
