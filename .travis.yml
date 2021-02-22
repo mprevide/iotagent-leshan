@@ -1,5 +1,0 @@
-language: java
-services:
-  - docker
-after_success:
-  - travis/publish.sh
