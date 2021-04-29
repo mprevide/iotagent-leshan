@@ -6,7 +6,7 @@
 
     <groupId>com.github.dojot</groupId>
     <artifactId>iotagent-leshan</artifactId>
-    <version>1.1.0</version>
+    <version>2.0.0</version>
 
     <name>IoT Agent Leshan</name>
     <url>https://github.com/dojot/iotagent-leshan</url>
@@ -142,12 +142,12 @@
         <dependency>
             <groupId>com.github.dojot</groupId>
             <artifactId>iotagent-java</artifactId>
-            <version>1.1.0</version>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.dojot</groupId>
             <artifactId>dojot-module-java</artifactId>
-            <version>1.1.0</version>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.californium</groupId>
