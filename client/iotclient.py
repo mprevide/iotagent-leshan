@@ -31,19 +31,22 @@ class IotClient(object):
             host = sys.argv[1]
             login = sys.argv[2]
             passwd = sys.argv[3]
+            tenant = sys.argv[4]
         else:
             print('You can pass in command line: url, login and passwd for dojot.')
-            print('Eg: python3 filename.py http://test:8000 login pass')
+            print('Eg: python3 filename.py http://test:8000 login pass tenant')
             host = 'http://localhost:8000'
             login = 'admin'
             passwd = 'admin'
+            tenant = 'admin'
 
         print('Using url='+host+', login=' +
-              login+' and passwd='+passwd+'.')
+              login+' and passwd='+passwd+' in tenant=.'+tenant)
 
         self.host = host
         self.login = login
         self.passwd = passwd
+        self.tenant = tenant
         self.jwt_token = self.get_token()
         self.headers = {'Authorization': 'Bearer ' + self.jwt_token}
 
@@ -57,10 +60,16 @@ class IotClient(object):
         return devices[0]["id"]
 
     def get_token(self):
-        auth_url = self.host+'/auth/'
-        r = requests.post(
-            auth_url, json={"username": self.login, "passwd": self.passwd})
-        jwt_token = json.loads(r.text)['jwt']
+        credentials = {
+            "username": self.login,
+            "password": self.passwd,
+            "client_id": "cli",
+            "grant_type": "password",
+        }
+        auth_url = self.host+'/auth/realms/'+self.tenant+'/protocol/openid-connect/token'
+        payload = requests.post(
+            auth_url, data=credentials)
+        jwt_token = payload.json()['access_token']
         return jwt_token
 
     def upload_image(self, filename, template_name, fw_version):
@@ -88,6 +97,7 @@ class IotClient(object):
         base_url = self.host+'/template'
         r = requests.post(base_url, json=template, headers=self.headers)
         response = json.loads(r.text)
+        print(response)
         return response['template']
 
     def create_device(self, device_payload):

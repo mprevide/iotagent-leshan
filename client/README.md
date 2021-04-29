@@ -24,6 +24,7 @@ pipenv install
 ```
 
 Enter in the virtual environment:
+
 ```shell
 pipenv shell
 ```
@@ -35,12 +36,11 @@ Check the [pipenv repository](https://github.com/pypa/pipenv/) for more commands
 #### Create a device to use with the simulator
 
 ```shell
-python3 create_lwm2m_devices.py http://localhost:8000  admin admin
+python3 create_lwm2m_devices.py http://localhost:8000  admin admin admin
 ```
 
 This command will create a device (`unsecure-dev-0`) with 3 templates (`lwm2m`, `firmware_update` and `Temperature`) in a dojot running at
- http://localhost:8000 and accessible by the user `admin` and password `admin`.
-
+ http://localhost:8000 and accessible by the user `admin` and password `admin` in tenant `admin`.
 
 #### Using simulator
 
