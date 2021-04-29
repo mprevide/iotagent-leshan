@@ -8,7 +8,24 @@ on:
 
 jobs:
 
+  java-tests:
+    name: Build and Tests
+    if: contains(github.event.head_commit.message, 'ci skip') == false # if the commit message has ci skip, doesn't run anything because needs
+    runs-on: ubuntu-18.04
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-java@v2
+      with:
+        distribution: 'zulu'
+        java-version: '8'
+    - name: Build with Maven
+      run: mvn --batch-mode --update-snapshots verify
+    - name: Run test
+      run: mvn test
+
   docker-hub:
+    needs: java-tests
     name: Build and Publish image to DockerHUb
     runs-on: ubuntu-latest
     # If this is a PR, it won't run

@@ -140,9 +140,9 @@
             <version>14.0.1</version>
         </dependency>
         <dependency>
-            <groupId>com.github.dojot</groupId>
+            <groupId>com.github.mprevide</groupId>
             <artifactId>iotagent-java</artifactId>
-            <version>1.1.0</version>
+            <version>keycloak-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.dojot</groupId>
